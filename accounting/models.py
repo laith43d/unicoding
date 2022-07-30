@@ -1,7 +1,8 @@
 from django.db import models
 from django.db.models import Sum
-from django.dispatch import receiver
 from django.db.models.signals import post_save
+from django.dispatch import receiver
+
 from accounting.exceptions import AccountingEquationError
 
 '''
@@ -60,33 +61,26 @@ class Account(models.Model):
         return f'{self.full_code} - {self.name}'
 
     def balance(self):
-        return self.journal_entries.values('currency').annotate(sum=Sum('amount')).order_by()
+        if self.parent is not None:
+            return self.journal_entries.values('currency').annotate(sum=Sum('amount')).order_by()
+        else:
+            children = self.children.all()
+            # When parent has no children.
+            if len(children) == 0:
+                return self.journal_entries.values('currency').annotate(sum=Sum('amount')).order_by()
 
-    # def save(
-    #         self, force_insert=False, force_update=False, using=None, update_fields=None
-    # ):
-    #     creating = not bool(self.id)
-    #
-    #     if creating:
-    #         self.code = self.id
-    #         try:
-    #             self.full_code = f'{self.parent.full_code}{self.id}'
-    #         except AttributeError:
-    #             self.full_code = self.id
-    #
-    #     super(Account, self).save()
-    #
-    #     if creating:
-    #         self.refresh_from_db()
+            # When parent has one child.
+            if len(children) == 1:
+                return self.journal_entries.values('currency').annotate(sum=Sum('amount')).order_by()
 
+            # When parent has more than one child.
+            objects = []
+            for child in list(children):
+                child_balance = child.balance()
+                obj = Balance(child_balance)
+                objects.append(obj)
 
-# @receiver(post_save, sender=Account)
-# def add_code_and_full_code(sender, instance, **kwargs):
-#     instance.code = instance.id
-#     if instance.parent:
-#         instance.full_code = f'{instance.parent.full_code}{instance.id}'
-#     else:
-#         instance.full_code = f'{instance.id}'
+            return sum(objects)
 
 
 class Transaction(models.Model):
