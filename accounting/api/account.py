@@ -1,3 +1,4 @@
+from http import HTTPStatus
 from ninja import Router
 from ninja.security import django_auth
 from django.shortcuts import get_object_or_404
@@ -5,7 +6,7 @@ from accounting.models import Account, AccountTypeChoices
 from accounting.schemas import AccountOut, FourOFourOut, GeneralLedgerOut
 from typing import List
 from django.db.models import Sum, Avg
-from rest_framework import status
+from accounting.services import get_balance
 
 from restauth.authorization import AuthBearer
 
@@ -14,7 +15,7 @@ account_router = Router(tags=['account'])
 
 @account_router.get("/get_all", response=List[AccountOut])
 def get_all(request):
-    return status.HTTP_200_OK, Account.objects.order_by('full_code')
+    return HTTPStatus.OK, Account.objects.order_by('full_code')
 
 
 @account_router.get('/get_one/{account_id}/', response={
@@ -42,7 +43,7 @@ def get_account_balance(request, account_id: int):
 
     journal_entries = account.journal_entries.all()
 
-    return 200, {'account': account.name, 'balance': list(balance), 'jes': list(journal_entries)}
+    return HTTPStatus.OK, {'account': account.name, 'balance': list(balance), 'jes': list(journal_entries)}
 
 
 @account_router.get('/account-balances/', response=List[GeneralLedgerOut])
@@ -54,34 +55,35 @@ def get_account_balances(request):
             'account': a.name, 'balance': list(a.balance())
         })
 
-    return status.HTTP_200_OK, result
+    return HTTPStatus.OK, result
 
 
+#task3 sol
+@account_router.get('/account-balance/') 
+def account_balance(request, id: int):
+    account = Account.objects.get(id=id)
+    children_accounts = account.children.all()
+    account_balance = account.balance()
+    children_balances=[]
+    balances=[]
+    
+    for a in children_accounts:
+        balance = a.balance()
+        children_balances.append(list(balance))
 
+    for a in children_balances:
+        for i in a:
+            balances.append(i)
 
-class Balance:
-    def __init__(self, balances):
-        balance1 = balances[0]
-        balance2 = balances[1]
+    for a in list(account_balance):
+        balances.append(a)
+    
+    if account.parent == None:
+        final_balance= get_balance(balances)
+    else:
+        final_balance= list(account_balance)
 
-        if balance1['currency'] == 'USD':
-            balanceUSD = balance1['sum']
-            balanceIQD = balance2['sum']
-        else:
-            balanceIQD = balance1['sum']
-            balanceUSD = balance2['sum']
+    print(account_balance)
 
-        self.balanceUSD = balanceUSD
-        self.balanceIQD = balanceIQD
-
-    def __add__(self, other):
-        self.balanceIQD += other.balanceIQD
-        self.balanceUSD += other.balanceUSD
-        return [{
-            'currency': 'USD',
-            'sum': self.balanceUSD
-        }, {
-            'currency': 'IQD',
-            'sum': self.balanceIQD
-        }]
+    return HTTPStatus.OK, {'account': account.name, 'balance':final_balance}
 
