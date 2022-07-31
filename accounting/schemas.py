@@ -70,6 +70,9 @@ class CurrencyBalance(Schema):
 
 
 class GeneralLedgerOut(Schema):
-    account: str
+    account: str = None
     balance: List[CurrencyBalance]
     # jes: List[JournalEntryOut]
+
+
+
