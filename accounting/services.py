@@ -4,6 +4,7 @@ from accounting.exceptions import AtomicAccountTransferException, ZeroAmountErro
 from accounting.models import Transaction, JournalEntry
 
 
+
 @db_transaction.atomic()
 def account_transfer(data):
     try:
@@ -33,3 +34,19 @@ def account_transfer(data):
         #     return status.HTTP_400_BAD_REQUEST, {'detail': 'transaction is not valid'}
         return t
 
+
+
+
+def get_balance(balances):
+    IQD_balance=0
+    USD_balance=0
+    
+    
+    for a in balances:
+        if (a['currency'] == 'IQD'):
+            IQD_balance += a['total'] 
+        else:
+            USD_balance += a['total']
+
+    total_balance = [{'currency':"USD", 'total':USD_balance},{'currency':'IQD', 'total':IQD_balance}]
+    return total_balance
