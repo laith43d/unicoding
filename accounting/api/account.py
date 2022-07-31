@@ -37,8 +37,10 @@ def get_account_types(request):
 @account_router.get('/account-balance/{account_id}', response=GeneralLedgerOut)
 def get_account_balance(request, account_id: int):
     account = get_object_or_404(Account, id=account_id)
-
-    balance = account.balance()
+    if account.parent is not None:
+        balance = account.balance()
+    else:
+        balance = account.total_balance()
 
     journal_entries = account.journal_entries.all()
 
@@ -51,7 +53,7 @@ def get_account_balances(request):
     result = []
     for a in accounts:
         result.append({
-            'account': a.name, 'balance': list(a.balance())
+            'account': a.name, 'balance': list(a.total_balance())
         })
 
     return status.HTTP_200_OK, result

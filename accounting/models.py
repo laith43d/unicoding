@@ -61,26 +61,26 @@ class Account(models.Model):
         return f'{self.full_code} - {self.name}'
 
     def balance(self):
-        if self.parent is not None:
-            return self.journal_entries.values('currency').annotate(sum=Sum('amount')).order_by()
-        else:
-            children = self.children.all()
-            # When parent has no children.
-            if len(children) == 0:
-                return self.journal_entries.values('currency').annotate(sum=Sum('amount')).order_by()
+        return self.journal_entries.values('currency').annotate(sum=Sum('amount')).order_by()
 
-            # When parent has one child.
-            if len(children) == 1:
-                return self.journal_entries.values('currency').annotate(sum=Sum('amount')).order_by()
+    def total_balance(self):
+        children = self.children.all()
+        # When parent has no children.
+        if len(children) == 0:
+            return self.balance()
 
-            # When parent has more than one child.
-            objects = []
-            for child in list(children):
-                child_balance = child.balance()
-                obj = Balance(child_balance)
-                objects.append(obj)
+        # When parent has one child.
+        if len(children) == 1:
+            return self.balance()
 
-            return sum(objects)
+        # When parent has more than one child.
+        objects = []
+        for child in list(children):
+            child_balance = child.balance()
+            obj = Balance(child_balance)
+            objects.append(obj)
+
+        return sum(objects)
 
 
 class Transaction(models.Model):
