@@ -45,16 +45,64 @@ def get_account_balance(request, account_id: int):
     return 200, {'account': account.name, 'balance': list(balance), 'jes': list(journal_entries)}
 
 
-@account_router.get('/account-balances/', response=List[GeneralLedgerOut])
-def get_account_balances(request):
-    accounts = Account.objects.all()
-    result = []
-    for a in accounts:
-        result.append({
-            'account': a.name, 'balance': list(a.balance())
-        })
+@account_router.get('parent-child-balances/', response=List[SumChildParent])
 
-    return status.HTTP_200_OK, result
+
+def get_parent_child_balances(request):
+
+
+    accounts = Account.objects.all()
+
+
+    parentlist = []
+
+
+
+
+
+    for a in accounts:
+
+
+        if a.account_set.all():
+
+
+            sumUSD = 0
+
+
+            sumIQD = 0
+
+
+            for child in account.account_set.all():
+
+
+                balance = list(account.balance())
+
+
+                balance += list(child.balance())
+
+
+                for balance in balance:
+
+
+                    if balance['currency'] == 'USD':
+
+
+                        sumUSD += int(balance['sum'])
+
+
+                    else:
+
+
+                        sumIQD += int(balance['sum'])
+
+
+            parentlist.append({'account': a.name, 'balance': list(a.balance()), 'id':a.id, 'sumUSD':sumUSD, 'sumIQD':sumIQD})
+
+
+
+
+
+    return status.HTTP_200_OK, parentlist
 
 
 
