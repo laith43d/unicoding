@@ -1,7 +1,6 @@
 from django.db import models
 from django.db.models import Sum
-from django.dispatch import receiver
-from django.db.models.signals import post_save
+from accounting.api import Balance
 from accounting.exceptions import AccountingEquationError
 
 '''
@@ -49,7 +48,7 @@ class CurrencyChoices(models.TextChoices):
 
 
 class Account(models.Model):
-    parent = models.ForeignKey('self', null=True, blank=True, on_delete=models.SET_NULL)
+    parent = models.ForeignKey('self', null=True, blank=True, on_delete=models.SET_NULL, related_name='children')
     type = models.CharField(max_length=255, choices=AccountTypeChoices.choices)
     name = models.CharField(max_length=255)
     code = models.CharField(max_length=20, null=True, blank=True)
@@ -62,31 +61,6 @@ class Account(models.Model):
     def balance(self):
         return self.journal_entries.values('currency').annotate(sum=Sum('amount')).order_by()
 
-    # def save(
-    #         self, force_insert=False, force_update=False, using=None, update_fields=None
-    # ):
-    #     creating = not bool(self.id)
-    #
-    #     if creating:
-    #         self.code = self.id
-    #         try:
-    #             self.full_code = f'{self.parent.full_code}{self.id}'
-    #         except AttributeError:
-    #             self.full_code = self.id
-    #
-    #     super(Account, self).save()
-    #
-    #     if creating:
-    #         self.refresh_from_db()
-
-
-# @receiver(post_save, sender=Account)
-# def add_code_and_full_code(sender, instance, **kwargs):
-#     instance.code = instance.id
-#     if instance.parent:
-#         instance.full_code = f'{instance.parent.full_code}{instance.id}'
-#     else:
-#         instance.full_code = f'{instance.id}'
 
 
 class Transaction(models.Model):

@@ -1,38 +1,36 @@
-from ninja import Router
-from ninja.security import django_auth
-from django.shortcuts import get_object_or_404
-from accounting.models import Account, AccountTypeChoices
-from accounting.schemas import AccountOut, FourOFourOut, GeneralLedgerOut
 from typing import List
-from django.db.models import Sum, Avg
+from django.shortcuts import get_object_or_404
+from ninja import Router
 from rest_framework import status
+from accounting.models import  Account
+from accounting.schemas import GeneralLedgerOut
 
-from restauth.authorization import AuthBearer
 
 account_router = Router(tags=['account'])
 
 
-@account_router.get("/get_all", response=List[AccountOut])
+"""@account_router.get("/get_all", response=List[AccountOut])
 def get_all(request):
-    return status.HTTP_200_OK, Account.objects.order_by('full_code')
+    return status.HTTP_200_OK, accounting.models.Account.objects.order_by('full_code')
 
-
-@account_router.get('/get_one/{account_id}/', response={
+"""
+"""@account_router.get('/get_one/{account_id}/', response={
     200: AccountOut,
     404: FourOFourOut,
 })
 def get_one(request, account_id: int):
     try:
+        from accounting.models import Account
         account = Account.objects.get(id=account_id)
         return account
     except Account.DoesNotExist:
         return 404, {'detail': f'Account with id {account_id} does not exist'}
 
-
-@account_router.get('/get_account_types/')
+"""
+"""@account_router.get('/get_account_types/')
 def get_account_types(request):
     return {t[0]: t[1] for t in AccountTypeChoices.choices}
-
+"""
 
 @account_router.get('/account-balance/{account_id}', response=GeneralLedgerOut)
 def get_account_balance(request, account_id: int):
@@ -47,41 +45,21 @@ def get_account_balance(request, account_id: int):
 
 @account_router.get('/account-balances/', response=List[GeneralLedgerOut])
 def get_account_balances(request):
-    accounts = Account.objects.all()
+    account = Account.objects.all()
     result = []
-    for a in accounts:
+    for a in account:
         result.append({
             'account': a.name, 'balance': list(a.balance())
         })
-
     return status.HTTP_200_OK, result
 
+@account_router.get('/total_balance/', response=GeneralLedgerOut)
+def get_totals_balance(request):
+    account = Account.objects.all()
+    total__total_balance = []
+    for to in account:
+        total__total_balance.append({'account': to.name, 'balance': list(to.total_balance())})
+    return 200, total__total_balance
 
 
-
-class Balance:
-    def __init__(self, balances):
-        balance1 = balances[0]
-        balance2 = balances[1]
-
-        if balance1['currency'] == 'USD':
-            balanceUSD = balance1['sum']
-            balanceIQD = balance2['sum']
-        else:
-            balanceIQD = balance1['sum']
-            balanceUSD = balance2['sum']
-
-        self.balanceUSD = balanceUSD
-        self.balanceIQD = balanceIQD
-
-    def __add__(self, other):
-        self.balanceIQD += other.balanceIQD
-        self.balanceUSD += other.balanceUSD
-        return [{
-            'currency': 'USD',
-            'sum': self.balanceUSD
-        }, {
-            'currency': 'IQD',
-            'sum': self.balanceIQD
-        }]
 
