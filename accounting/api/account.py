@@ -1,13 +1,11 @@
 from ninja import Router
-from ninja.security import django_auth
 from django.shortcuts import get_object_or_404
 from accounting.models import Account, AccountTypeChoices
 from accounting.schemas import AccountOut, FourOFourOut, GeneralLedgerOut
 from typing import List
-from django.db.models import Sum, Avg
 from rest_framework import status
+from accounting.services import get_balance
 
-from restauth.authorization import AuthBearer
 
 account_router = Router(tags=['account'])
 
@@ -45,43 +43,29 @@ def get_account_balance(request, account_id: int):
     return 200, {'account': account.name, 'balance': list(balance), 'jes': list(journal_entries)}
 
 
-@account_router.get('/account-balances/', response=List[GeneralLedgerOut])
-def get_account_balances(request):
-    accounts = Account.objects.all()
-    result = []
-    for a in accounts:
-        result.append({
-            'account': a.name, 'balance': list(a.balance())
-        })
+@account_router.get('/account-balance/') 
+def account_balance(request, ID: int):
+    account = Account.objects.get(id=ID)
+    childrenAccounts = account.children.all()
+    account_balance = account.balance()
+    children_balances=[]
+    balances=[]
 
-    return status.HTTP_200_OK, result
+    for a in childrenAccounts:
+        balance = a.balance()
+        children_balances.append(list(balance))
 
+    for a in children_balances:
+        for i in a:
+            balances.append(i)
 
+    for a in list(account_balance):
+        balances.append(a)
 
+    if account.parent == None:
+        final_balance= get_balance(balances)
+    else:
+        final_balance= list(account_balance)
 
-class Balance:
-    def __init__(self, balances):
-        balance1 = balances[0]
-        balance2 = balances[1]
-
-        if balance1['currency'] == 'USD':
-            balanceUSD = balance1['sum']
-            balanceIQD = balance2['sum']
-        else:
-            balanceIQD = balance1['sum']
-            balanceUSD = balance2['sum']
-
-        self.balanceUSD = balanceUSD
-        self.balanceIQD = balanceIQD
-
-    def __add__(self, other):
-        self.balanceIQD += other.balanceIQD
-        self.balanceUSD += other.balanceUSD
-        return [{
-            'currency': 'USD',
-            'sum': self.balanceUSD
-        }, {
-            'currency': 'IQD',
-            'sum': self.balanceIQD
-        }]
+    return status.HTTP_200_OK, {'account': account.name, 'balance':final_balance}
 
