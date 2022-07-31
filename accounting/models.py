@@ -1,7 +1,6 @@
 from django.db import models
 from django.db.models import Sum
-from django.dispatch import receiver
-from django.db.models.signals import post_save
+
 from accounting.exceptions import AccountingEquationError
 
 '''
@@ -12,21 +11,52 @@ Account
     - name
     - code
     - full_code
-    
+
 Transaction
     - type
     - description
-
+    
 JournalEntry
     - account
     - transaction
     - amount
     - currency
-    
+
 * Accounts should support multiple currencies
 * Each Transaction should consist of two or more even numbered Journal Entries
 
 '''
+
+
+class Balance:
+
+    def __init__(self, balances):
+        balanceIQD = 0
+        balanceUSD = 0
+        for i in balances:
+            if i['currency'] == 'USD':
+                balanceUSD = i['sum']
+            if i['currency'] == 'IQD':
+                balanceIQD = i['sum']
+        self.balanceUSD = balanceUSD
+        self.balanceIQD = balanceIQD
+
+    def __add__(self, other):
+        self.balanceIQD += other.balanceIQD
+        self.balanceUSD += other.balanceUSD
+        return [{
+            'currency': 'USD',
+            'sum': self.balanceUSD
+        }, {
+            'currency': 'IQD',
+            'sum': self.balanceIQD
+        }]
+
+    def __radd__(self, other):
+        if other == 0:
+            return self
+        else:
+            return self.__add__(other)
 
 
 class AccountTypeChoices(models.TextChoices):
@@ -49,7 +79,8 @@ class CurrencyChoices(models.TextChoices):
 
 
 class Account(models.Model):
-    parent = models.ForeignKey('self', null=True, blank=True, on_delete=models.SET_NULL)
+    parent = models.ForeignKey('self', null=True, blank=True, on_delete=models.SET_NULL,
+                               related_name='account_children')
     type = models.CharField(max_length=255, choices=AccountTypeChoices.choices)
     name = models.CharField(max_length=255)
     code = models.CharField(max_length=20, null=True, blank=True)
@@ -62,32 +93,23 @@ class Account(models.Model):
     def balance(self):
         return self.journal_entries.values('currency').annotate(sum=Sum('amount')).order_by()
 
-    # def save(
-    #         self, force_insert=False, force_update=False, using=None, update_fields=None
-    # ):
-    #     creating = not bool(self.id)
-    #
-    #     if creating:
-    #         self.code = self.id
-    #         try:
-    #             self.full_code = f'{self.parent.full_code}{self.id}'
-    #         except AttributeError:
-    #             self.full_code = self.id
-    #
-    #     super(Account, self).save()
-    #
-    #     if creating:
-    #         self.refresh_from_db()
+    def total_balance(self):
 
+        if self.parent is not None:
+            return self.balance()
+        else:
+            children = self.account_children.all()
+            if len(children) == 1:
+                return self.balance()
+            elif len(children) == 0:
+                return self.balance()
+            else:
+                Total_balance = []
+            for childrens in list(children):
+                child_Balance = childrens.total_balance()
+                Total_balance.append(Balance(child_Balance))
 
-# @receiver(post_save, sender=Account)
-# def add_code_and_full_code(sender, instance, **kwargs):
-#     instance.code = instance.id
-#     if instance.parent:
-#         instance.full_code = f'{instance.parent.full_code}{instance.id}'
-#     else:
-#         instance.full_code = f'{instance.id}'
-
+            return sum(Total_balance)
 
 class Transaction(models.Model):
     type = models.CharField(max_length=255, choices=TransactionTypeChoices.choices)

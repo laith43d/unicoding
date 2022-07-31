@@ -33,7 +33,7 @@ class TransactionOut(Schema):
 
 class TransactionOutSchema(Schema):
     transaction: TransactionOut
-    # jes: List[StandAloneJournalEntry]
+
 
 
 class JournalEntry(Schema):
@@ -70,6 +70,6 @@ class CurrencyBalance(Schema):
 
 
 class GeneralLedgerOut(Schema):
-    account: str
+    account: str = None
     balance: List[CurrencyBalance]
-    # jes: List[JournalEntryOut]
+
