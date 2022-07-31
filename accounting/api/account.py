@@ -81,14 +81,12 @@ def get_account_balances(request):
     transactions = Transaction.objects.all()
     result = []
     d={}
-    counter = 0
     father =[]
     father_id =[]
     
     dd1={}
     dd2={}
-    dd3={}
-    dd4 = {}
+
     for a in accounts:
         result.append({
             'account': a.name,
@@ -101,7 +99,7 @@ def get_account_balances(request):
             father_id.append(a.id)
             sinsOFtheChild = [i.balance() for i in a.children.all()]
             d["children of parent id => {0}".format([i['parent_id'] for i in a.children.values()][0])] = sinsOFtheChild
-            # d["{0}".format([i['parent_id'] for i in a.children.values()][0])] = sinsOFtheChild
+            
     balances = {}
     print(d,end="\n------------------\n")
     for x in range(len(list(d.keys()))):
