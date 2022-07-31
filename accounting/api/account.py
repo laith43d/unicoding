@@ -52,9 +52,9 @@ def get_account_balances(request):
     accounts = Account.objects.all()
     result = []
     for a in accounts:
+        temp_balance = [{'currency': 'IQD', 'sum': Decimal(0)},{'currency': 'USD', 'sum': Decimal(0)}]
         if len(a.children.all()) > 0:
             lisT_children = a.children.values('name')
-            temp_balance = [{'currency': 'IQD', 'sum': Decimal(0)},{'currency': 'USD', 'sum': Decimal(0)}]
             if len(a.journal_entries.all()) > 0:
                 temp_balance = Balance(temp_balance) + Balance(a.balance())
             for i in lisT_children:
@@ -63,7 +63,6 @@ def get_account_balances(request):
                 temp_balance = Balance(temp_balance) + Balance(b)
             result.append({'account': a.name, 'balance': temp_balance})
         else:
-            temp_balance = [{'currency': 'IQD', 'sum': Decimal(0)},{'currency': 'USD', 'sum': Decimal(0)}]
             temp_balance = Balance(temp_balance) + Balance(a.balance())
             result.append({'account': a.name, 'balance': temp_balance})
     return status.HTTP_200_OK, result
