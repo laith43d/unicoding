@@ -49,32 +49,7 @@ def get_account_balance(request, account_id: int):
 
     return 200, {'account': account.name, 'balance': list(balance), 'jes': list(journal_entries)}
 
-class Balance:
-    def __init__(self, balances:list[dict]):
-        balance1 = balances[0]
-        balance2 = balances[1]
-        print(balance1)
-        if balance1['currency'] == 'USD':
-            balanceUSD = balance1['sum']
-            balanceIQD = balance2['sum']
-        else:
-            balanceIQD = balance1['sum']
-            balanceUSD = balance2['sum']
 
-        self.balanceUSD = balanceUSD
-        self.balanceIQD = balanceIQD
-
-    def __add__(self, other):
-        self.balanceIQD += other.balanceIQD
-        self.balanceUSD += other.balanceUSD
-        return [{
-            'currency': 'USD',
-            'sum': self.balanceUSD
-        }, {
-            'currency': 'IQD',
-            'sum': self.balanceIQD
-        }]
-    
 @account_router.get('/account-balances/', response=List[GeneralLedgerOut])
 def get_account_balances(request):
     accounts = Account.objects.all()
