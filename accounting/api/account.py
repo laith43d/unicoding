@@ -1,3 +1,5 @@
+from decimal import Decimal
+from unicodedata import decimal, name
 from ninja import Router
 from ninja.security import django_auth
 from django.shortcuts import get_object_or_404
@@ -50,10 +52,20 @@ def get_account_balances(request):
     accounts = Account.objects.all()
     result = []
     for a in accounts:
-        result.append({
-            'account': a.name, 'balance': list(a.balance())
-        })
-
+        if len(a.children.all()) > 0:
+            lisT_children = a.children.values('name')
+            temp_balance = [{'currency': 'IQD', 'sum': Decimal(0)},{'currency': 'USD', 'sum': Decimal(0)}]
+            if len(a.journal_entries.all()) > 0:
+                temp_balance = Balance(temp_balance) + Balance(a.balance())
+            for i in lisT_children:
+                s = Account.objects.get(name = i['name'])
+                b = s.balance()
+                temp_balance = Balance(temp_balance) + Balance(b)
+            result.append({'account': a.name, 'balance': temp_balance})
+        else:
+            temp_balance = [{'currency': 'IQD', 'sum': Decimal(0)},{'currency': 'USD', 'sum': Decimal(0)}]
+            temp_balance = Balance(temp_balance) + Balance(a.balance())
+            result.append({'account': a.name, 'balance': temp_balance})
     return status.HTTP_200_OK, result
 
 
@@ -61,27 +73,37 @@ def get_account_balances(request):
 
 class Balance:
     def __init__(self, balances):
-        balance1 = balances[0]
-        balance2 = balances[1]
+        if len(balances) == 2 :
+            balance1 = balances[0]
+            balance2 = balances[1]
 
-        if balance1['currency'] == 'USD':
-            balanceUSD = balance1['sum']
-            balanceIQD = balance2['sum']
+            if balance1['currency'] == 'USD':
+                balanceUSD = balance1['sum']
+                balanceIQD = balance2['sum']
+            else:
+                balanceIQD = balance1['sum']
+                balanceUSD = balance2['sum']
+        elif len(balances) == 1:
+            balance1 = balances[0]
+            if balance1['currency'] == 'USD':
+                balanceUSD = balance1['sum']
+                balanceIQD = 0
+            else:
+                balanceIQD = balance1['sum']
+                balanceUSD = 0
         else:
-            balanceIQD = balance1['sum']
-            balanceUSD = balance2['sum']
-
+            balanceUSD = 0
+            balanceIQD = 0
         self.balanceUSD = balanceUSD
-        self.balanceIQD = balanceIQD
-
+        self.balanceIQD = balanceIQD  
     def __add__(self, other):
         self.balanceIQD += other.balanceIQD
         self.balanceUSD += other.balanceUSD
         return [{
-            'currency': 'USD',
-            'sum': self.balanceUSD
-        }, {
             'currency': 'IQD',
             'sum': self.balanceIQD
+        }, {
+            'currency': 'USD',
+            'sum': self.balanceUSD
         }]
 
