@@ -27,3 +27,16 @@ class Balance:
             return self
         else:
             return self.__add__(other)
+
+
+def zero_balances():
+    return [
+        {
+            "currency": "USD",
+            "sum": "0.0"
+        },
+        {
+            "currency": "IQD",
+            "sum": "0.0"
+        }
+    ]

@@ -4,7 +4,7 @@ from django.db.models.signals import post_save
 from django.dispatch import receiver
 
 from accounting.exceptions import AccountingEquationError
-from accounting.utils import Balance
+from accounting.utils import Balance, zero_balances
 
 '''
 
@@ -63,20 +63,29 @@ class Account(models.Model):
 
     @property
     def balance(self):
-        return self.journal_entries.values('currency').annotate(sum=Sum('amount')).order_by()
+        """
+        This property is to get a balance for an account that has no parent in common.
+        We can use it for parents with a single child since we don't need to sum more than one child,
+        so calculate all the JEs we have.
+        """
+        result = self.journal_entries.values('currency').annotate(sum=Sum('amount')).order_by()
+        if not result:
+            # When there is no result, this means the account has no balances.
+            return zero_balances()
+        return result
 
     @property
     def total_balance(self):
+        """
+        This property is to get a balance for accounts with multiple children,
+        so we get the parent balance by simple sum operation for all children we have.
+        """
         children = self.children.all()
-        # When parent has no children.
-        if len(children) == 0:
+        if len(children) <= 1:
+            # If the parent has one child or less, we use balance property, as we said previously.
             return self.balance
 
-        # When parent has one child.
-        if len(children) == 1:
-            return self.balance
-
-        # When parent has more than one child.
+        # When the parent has multi children, get the sum of all child balances.
         objects = []
         for child in list(children):
             child_balance = child.balance
