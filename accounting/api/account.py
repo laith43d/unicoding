@@ -44,7 +44,6 @@ def get_account_balance(request, account_id: int):
 
     return 200, {'account': account.name, 'balance': list(balance), 'jes': list(journal_entries)}
 
-
 @account_router.get('/account-balances/', response=List[GeneralLedgerOut])
 def get_account_balances(request):
     accounts = Account.objects.all()
