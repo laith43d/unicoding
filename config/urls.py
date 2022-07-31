@@ -35,3 +35,4 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path("api/", api.urls),
 ]
+#urlpatterns += patterns('', url(r'^silk', include('silk.urls', namespace='silk')))

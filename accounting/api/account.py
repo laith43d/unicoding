@@ -57,26 +57,66 @@ def get_account_balances(request):
     return status.HTTP_200_OK, result
 
 
+@account_router.get('/Account-Balances-Total/', response=List[GeneralLedgerOut])
+def get_account_balances(request):
+    accounts = Account.objects.all().filter(parent=None)
+
+    result = []
+    for a in accounts.all():
+        total = None
+        main_balance = Balance(a.balance())
+
+        children = a.children.all()
+
+        for child in children:
+            balance_object = Balance(child.balance())
+
+            total = main_balance.__add__(balance_object)
+        result.append({
+            'account': a.name, 'balance': list(total)
+        })
+
+    return 200, result
 
 
 class Balance:
-    def __init__(self, balances):
-        balance1 = balances[0]
-        balance2 = balances[1]
 
-        if balance1['currency'] == 'USD':
-            balanceUSD = balance1['sum']
-            balanceIQD = balance2['sum']
-        else:
-            balanceIQD = balance1['sum']
-            balanceUSD = balance2['sum']
+    def __init__(self, balances):
+        balanceIQD = 0
+        balanceUSD = 0
+        for i in balances:
+            if i['currency'] == 'USD':
+                balanceUSD = i['sum']
+            if i['currency'] == 'IQD':
+                balanceIQD = i['sum']
+
+        # if balance1['currency'] == 'USD':
+        #     balanceUSD = balance1['sum']
+        #     balanceIQD = balance2['sum']
+        # else:
+        #     balanceIQD = balance1['sum']
+        #     balanceUSD = balance2['sum']
 
         self.balanceUSD = balanceUSD
         self.balanceIQD = balanceIQD
+        
+        if self.balanceUSD == 0 :
+            self.balanceUSD = 0
+            
+        if self.balanceIQD == 0 :
+            self.balanceIQD = 0
+        
+        
 
     def __add__(self, other):
         self.balanceIQD += other.balanceIQD
         self.balanceUSD += other.balanceUSD
+        
+        
+            
+        
+        
+        
         return [{
             'currency': 'USD',
             'sum': self.balanceUSD
@@ -84,4 +124,3 @@ class Balance:
             'currency': 'IQD',
             'sum': self.balanceIQD
         }]
-
