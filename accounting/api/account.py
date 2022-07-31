@@ -38,9 +38,9 @@ def get_account_types(request):
 def get_account_balance(request, account_id: int):
     account = get_object_or_404(Account, id=account_id)
     if account.parent is not None:
-        balance = account.balance()
+        balance = account.balance
     else:
-        balance = account.total_balance()
+        balance = account.total_balance
 
     journal_entries = account.journal_entries.all()
 
@@ -53,7 +53,7 @@ def get_account_balances(request):
     result = []
     for a in accounts:
         result.append({
-            'account': a.name, 'balance': list(a.total_balance())
+            'account': a.name, 'balance': list(a.total_balance)
         })
 
     return status.HTTP_200_OK, result

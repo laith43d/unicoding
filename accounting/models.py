@@ -61,23 +61,25 @@ class Account(models.Model):
     def __str__(self):
         return f'{self.full_code} - {self.name}'
 
+    @property
     def balance(self):
         return self.journal_entries.values('currency').annotate(sum=Sum('amount')).order_by()
 
+    @property
     def total_balance(self):
         children = self.children.all()
         # When parent has no children.
         if len(children) == 0:
-            return self.balance()
+            return self.balance
 
         # When parent has one child.
         if len(children) == 1:
-            return self.balance()
+            return self.balance
 
         # When parent has more than one child.
         objects = []
         for child in list(children):
-            child_balance = child.balance()
+            child_balance = child.balance
             obj = Balance(child_balance)
             objects.append(obj)
 
