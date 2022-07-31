@@ -55,8 +55,6 @@ def get_account_balances(request):
           result.append({
             'account': a.name, 'balance': list(total)
             })  
-         
         else:
            total = a.balance() 
-
     return status.HTTP_200_OK, result
