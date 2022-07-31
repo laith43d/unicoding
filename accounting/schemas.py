@@ -72,4 +72,10 @@ class CurrencyBalance(Schema):
 class GeneralLedgerOut(Schema):
     account: str
     balance: List[CurrencyBalance]
+    #id: int
     # jes: List[JournalEntryOut]
+
+class SumChildParent(GeneralLedgerOut):
+    id: int
+    sumbalanceUSD: int
+    sumbalanceIQD: int
