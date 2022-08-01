@@ -1,9 +1,14 @@
+from asyncio.windows_events import NULL
+from decimal import Decimal
+from importlib.abc import PathEntryFinder
+from typing_extensions import Self
+from django.http import Http404, HttpRequest
 from ninja import Router
 from ninja.security import django_auth
 from django.shortcuts import get_object_or_404
 from accounting.models import Account, AccountTypeChoices
 from accounting.schemas import AccountOut, FourOFourOut, GeneralLedgerOut
-from typing import List
+from typing import List, final
 from django.db.models import Sum, Avg
 from rest_framework import status
 
@@ -49,30 +54,33 @@ def get_account_balance(request, account_id: int):
 def get_account_balances(request):
     accounts = Account.objects.all()
     result = []
+
     for a in accounts:
         result.append({
-            'account': a.name, 'balance': list(a.balance())
-        })
+            'account': a.name, 'balance': list(a.balance()),'id':a.id
+        }) 
+        
+    for b in accounts:
+        if b.parent_id == None:
+            result[next((i for i, x in enumerate(result) if x["id"] == b.id))]['balance'] = (Balance.__add__(Balance(result[next((i for i, x in enumerate(result) if x["id"] == b.id))]['balance']), Balance(list(b.balance()))))
+        else:
+            result[next((i for i, x in enumerate(result) if x["id"] == b.parent_id))]['balance'] = (Balance.__add__(Balance(result[next((i for i, x in enumerate(result) if x["id"] == b.parent_id))]['balance']), Balance(list(b.balance()))))  
 
     return status.HTTP_200_OK, result
 
 
-
-
 class Balance:
     def __init__(self, balances):
-        balance1 = balances[0]
-        balance2 = balances[1]
+        balanceIQD = []
+        balanceUSD = []
+        for i in balances:
+            if i['currency'] == 'USD':
+                balanceUSD.append(int(i['sum']))
+            if i['currency'] == 'IQD':
+                balanceIQD.append(int(i['sum']))    
 
-        if balance1['currency'] == 'USD':
-            balanceUSD = balance1['sum']
-            balanceIQD = balance2['sum']
-        else:
-            balanceIQD = balance1['sum']
-            balanceUSD = balance2['sum']
-
-        self.balanceUSD = balanceUSD
-        self.balanceIQD = balanceIQD
+        self.balanceUSD = sum(balanceUSD)
+        self.balanceIQD = sum(balanceIQD)
 
     def __add__(self, other):
         self.balanceIQD += other.balanceIQD
@@ -84,4 +92,3 @@ class Balance:
             'currency': 'IQD',
             'sum': self.balanceIQD
         }]
-
