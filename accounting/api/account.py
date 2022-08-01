@@ -50,6 +50,43 @@ def get_account_balance(request, account_id: int):
     return 200, {'account': account.name, 'balance': list(balance), 'jes': list(journal_entries)}
 
 
+
+# perfectionism
+class Balance:
+    def __init__(self, balances:list[list[dict]]):
+        listOfInfo = [item for sublist in balances for item in sublist]
+        currency_info = [c['currency'] for c in listOfInfo]
+        currency_info =  list(dict.fromkeys(currency_info))
+
+        usd_amount = 0
+        iqd_amount = 0
+
+        currency_amount = {}
+        currency_balance = {}
+        currency_balance_list = []
+        for c in currency_info:
+            currency_amount.update({c:list(filter(lambda currency: currency['currency'] == c, listOfInfo))})
+        # print(currency_amount)
+        for k,v in currency_amount.items():
+            currency_balance = ({
+            'currency': k,
+            'sum': sum([i['sum'] for i in v])
+        })
+            currency_balance_list.append(currency_balance)
+            
+        for d in currency_balance_list:
+            if d['currency'] == "USD":
+                usd_amount = d['sum']
+                
+            elif d['currency'] == "IQD":
+                iqd_amount = d['sum']
+                
+        self.balanceUSD = usd_amount
+        self.balanceIQD = iqd_amount
+        self.currency_balance_list = currency_balance_list
+    def sinsOfTheFather(self):
+        return self.currency_balance_list
+    
 @account_router.get('/account-balances/', response=List[GeneralLedgerOut])
 def get_account_balances(request):
     accounts = Account.objects.all()
@@ -58,9 +95,7 @@ def get_account_balances(request):
     d={}
     father =[]
     father_id =[]
-    
-    dd1={}
-    dd2={}
+    counter = 0
 
     for a in accounts:
         result.append({
@@ -71,35 +106,81 @@ def get_account_balances(request):
         
         if a.children.all():
             father.append(a.name)
+            # print(father)
             father_id.append(a.id)
+            fatherInfo =({father_id[counter]:father[counter]})
+            counter += 1
             sinsOFtheChild = [i.balance() for i in a.children.all()]
-            d["children of parent id => {0}".format([i['parent_id'] for i in a.children.values()][0])] = sinsOFtheChild
-            
-    balances = {}
-    print(d,end="\n------------------\n")
-    for x in range(len(list(d.keys()))):
-        Balance_USD=0
-        Balance_IQD=0
-        l = d[list(d.keys())[x]]
-        
-        flat_list = [item for sublist in l for item in sublist]
-        
-        for z in flat_list:
-            final_balance =[]
-            if z['currency'] == "USD":
-                Balance_USD += z['sum']
-                dd1 = ({"currency":z['currency'],"sum":Balance_USD})
-            elif z['currency'] == "IQD":
-                Balance_IQD += z['sum']
-                dd2 = ({"currency":z['currency'],"sum":Balance_IQD})
-            
-        final_balance = [dd1,dd2]
-        balances.update({father[x]:final_balance})
-    print(balances)
+            # d["{0}".format([i['parent_id'] for i in a.children.values()][0])] = sinsOFtheChild
+            d["{0}".format([fatherInfo[i['parent_id']] for i in a.children.values()][0])] = sinsOFtheChild
     for r in result:
-        for k,v in balances.items():
+        for k,v in d.items():
             if r['account'] == k:
-                r['balance'] = v         
+                b = Balance(v)
+                print(v)
+                r['balance'] = b.sinsOfTheFather()
+                
+    return status.HTTP_200_OK, result
+
+
+# this code is greate but not the best
+# @account_router.get('/account-balances/', response=List[GeneralLedgerOut])
+# def get_account_balances(request):
+#     accounts = Account.objects.all()
+#     transactions = Transaction.objects.all()
+#     result = []
+#     d={}
+#     father =[]
+#     father_id =[]
+#     counter = 0
+#     dd1={}
+#     for a in accounts:
+#         result.append({
+#             'account': a.name,
+#             'balance': list(a.balance()),
+#             # 'jes':list(a.journal_entries.all())
+#         })
+        
+#         if a.children.all():
+#             father.append(a.name)
+#             # print(father)
+#             father_id.append(a.id)
+#             fatherInfo =({father_id[counter]:father[counter]})
+#             counter += 1
+#             sinsOFtheChild = [i.balance() for i in a.children.all()]
+#             # d["{0}".format([i['parent_id'] for i in a.children.values()][0])] = sinsOFtheChild
+#             d["{0}".format([fatherInfo[i['parent_id']] for i in a.children.values()][0])] = sinsOFtheChild
+#     for r in result:
+#         for k,v in d.items():
+#             if r['account'] == k:
+#                 b = Balance(v)
+#                 print(b.sinsOfTheFather())
+#                 r['balance'] = b.sinsOfTheFather()
+    
+#     balances = {}
+#     for x in range(len(list(d.keys()))):
+#         Balance_USD=0
+#         Balance_IQD=0
+#         l = d[list(d.keys())[x]]
+        
+#         flat_list = [item for sublist in l for item in sublist]
+        
+#         for z in flat_list:
+#             final_balance =[]
+#             if z['currency'] == "USD":
+#                 Balance_USD += z['sum']
+#                 dd1 = ({"currency":z['currency'],"sum":Balance_USD})
+#             elif z['currency'] == "IQD":
+#                 Balance_IQD += z['sum']
+#                 dd2 = ({"currency":z['currency'],"sum":Balance_IQD})
+            
+#         final_balance = [dd1,dd2]
+#         balances.update({father[x]:final_balance})
+#     for r in result:
+#         for k,v in balances.items():
+#             if r['account'] == k:
+#                 r['balance'] = v         
+#     return status.HTTP_200_OK, result
 
     # the code below was written by a sicopath not recomended to read it or even use it
     # child ={}
@@ -134,12 +215,11 @@ def get_account_balances(request):
     #     balances.append(dd) 
     #     numOfFathers = numOfFathers+ 1   
 
+# php is not a bad language but django is great
     
     # for c in range(len(result)):
     #     for h in balances:
     #         if result[c]['account'] == h['father']:
     #             result[c]['balance'].extend([{"currency":"USD","sum":h["USD Amount"]},
     #             {"currency":"IQD","sum":h["IQD Amount"]}])
-    return status.HTTP_200_OK, result
-
 
