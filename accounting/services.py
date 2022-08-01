@@ -3,6 +3,7 @@ from http import HTTPStatus
 from accounting.exceptions import AtomicAccountTransferException, ZeroAmountError, AccountingEquationError
 from accounting.models import Transaction, JournalEntry
 
+#thask3 (function to get the balance of a list)
 def get_balance(balances):
     IQD_balance=0
     USD_balance=0

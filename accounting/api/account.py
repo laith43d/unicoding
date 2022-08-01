@@ -46,44 +46,97 @@ def get_account_balance(request, account_id: int):
     return HTTPStatus.OK, {'account': account.name, 'balance': list(balance), 'jes': list(journal_entries)}
 
 
-@account_router.get('/account-balances/', response=List[GeneralLedgerOut])
+#this end-point for task solution(get all balances)
+@account_router.get('/account-balances/') 
 def get_account_balances(request):
     accounts = Account.objects.all()
-    result = []
+    result=[]
     for a in accounts:
-        result.append({
-            'account': a.name, 'balance': list(a.balance())
-        })
+        jes = a.journal_entries.all()
+        name = a.name
+        children_accounts = a.children.all()
+        balance =[]
+        children_balances=[]
+        account_balance = a.balance()
 
+        if list(jes) == []:
+            final_balance = 0
+            result.append({'account': name,'balance': final_balance })
+        else:
+            for a in children_accounts:
+                balance.append(list(a.balance()))
+    
+            for a in balance:
+                for i in a:
+                    children_balances.append(i)
+    
+
+            child_balance = Balance(get_balance(children_balances))
+            parent_balance= Balance(account_balance)
+
+            if list(children_accounts) != []:
+                final_balance = child_balance.__add__(parent_balance)
+            else:
+                final_balance = list(account_balance)
+        
+            result.append({'account': name,'balance': final_balance })
     return HTTPStatus.OK, result
 
 
-#task3 sol
-@account_router.get('/account-balance/') 
-def account_balance(request, id: int):
-    account = Account.objects.get(id=id)
+
+#this end-point for task solution(get balance for specific account)
+@account_router.get('/account-balance/{account_id}')
+def get_account_balance(request, account_id: int):
+    account = get_object_or_404(Account, id=account_id)
     children_accounts = account.children.all()
-    account_balance = account.balance()
+    balance =[]
     children_balances=[]
-    balances=[]
     
     for a in children_accounts:
-        balance = a.balance()
-        children_balances.append(list(balance))
-
-    for a in children_balances:
-        for i in a:
-            balances.append(i)
-
-    for a in list(account_balance):
-        balances.append(a)
+            balance.append(list(a.balance()))
     
-    if account.parent == None:
-        final_balance= get_balance(balances)
+    for a in balance:
+        for i in a:
+            children_balances.append(i)
+    
+    child_balance = Balance(get_balance(children_balances))
+    parent_balance= Balance(account.balance())
+
+    if list(children_accounts) != []:
+        print(children_accounts)
+        final_balance = child_balance.__add__(parent_balance)
     else:
-        final_balance= list(account_balance)
+        final_balance = list(account.balance())
+    
+    return HTTPStatus.OK, {'account': account.name ,'balance': final_balance }
 
-    print(account_balance)
+#class balance
+class Balance:
 
-    return HTTPStatus.OK, {'account': account.name, 'balance':final_balance}
+    def __init__(self, balances):
+       
+        balanceIQD = 0
+        balanceUSD = 0
+        for i in balances:
+            if i['currency'] == 'USD':
+                balanceUSD = i['sum']
+            if i['currency'] == 'IQD':
+                balanceIQD = i['sum']
 
+       
+        self.balanceUSD = balanceUSD
+        self.balanceIQD = balanceIQD
+
+    def __add__(self, other):
+        
+        self.balanceIQD += other.balanceIQD
+        self.balanceUSD += other.balanceUSD
+        result=[{
+            'currency': 'USD',
+            'sum': self.balanceUSD
+        }, {
+            'currency': 'IQD',
+            'sum': self.balanceIQD
+        }]
+
+        return result
