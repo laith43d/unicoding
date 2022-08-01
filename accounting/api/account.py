@@ -2,10 +2,11 @@ from ninja import Router
 from ninja.security import django_auth
 from django.shortcuts import get_object_or_404
 from accounting.models import Account, AccountTypeChoices
-from accounting.schemas import AccountOut, FourOFourOut, GeneralLedgerOut
+from accounting.schemas import AccountOut, FourOFourOut, GeneralLedgerOut, TotalBalance
 from typing import List
 from django.db.models import Sum, Avg
 from rest_framework import status
+from accounting.services import get_balance_by_id
 
 from restauth.authorization import AuthBearer
 
@@ -56,32 +57,25 @@ def get_account_balances(request):
 
     return status.HTTP_200_OK, result
 
+#Task 3 Functions ✍️(◔◡◔) ↓↓↓↓↓↓↓↓↓↓↓↓
+
+@account_router.get('/total-account-balances/', response=List[TotalBalance])
+def get_total_account_balances(request):
+    accounts = Account.objects.all()
+    total_balances = []
+    for account in accounts:
+        result = get_balance_by_id(account.id)
+        total_balances.append(
+            {'account': f'{result[1]}', 'account_id': account.id, 'children_ids': f'{result[2]}', 'total_balance': result[0]}
+        )
+    return status.HTTP_200_OK, total_balances
 
 
-
-class Balance:
-    def __init__(self, balances):
-        balance1 = balances[0]
-        balance2 = balances[1]
-
-        if balance1['currency'] == 'USD':
-            balanceUSD = balance1['sum']
-            balanceIQD = balance2['sum']
-        else:
-            balanceIQD = balance1['sum']
-            balanceUSD = balance2['sum']
-
-        self.balanceUSD = balanceUSD
-        self.balanceIQD = balanceIQD
-
-    def __add__(self, other):
-        self.balanceIQD += other.balanceIQD
-        self.balanceUSD += other.balanceUSD
-        return [{
-            'currency': 'USD',
-            'sum': self.balanceUSD
-        }, {
-            'currency': 'IQD',
-            'sum': self.balanceIQD
-        }]
-
+@account_router.get('/total-account-balance/', response = {200: TotalBalance, 404: FourOFourOut})
+def get_total_account_balance(request, account_id: int):
+    result = get_balance_by_id(account_id)
+    try:
+        result = {'account': f'{result[1]}', 'account_id': account_id, 'children_ids': f'{result[2]}', 'total_balance': result[0]}
+        return 200, result
+    except: 
+        return 404, {'detail': f'Account with id {account_id} does not exist'}

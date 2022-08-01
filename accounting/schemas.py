@@ -73,3 +73,11 @@ class GeneralLedgerOut(Schema):
     account: str
     balance: List[CurrencyBalance]
     # jes: List[JournalEntryOut]
+
+#Task 3 Schema ✍️(◔◡◔) ↓↓↓↓↓↓↓↓↓↓↓↓
+
+class TotalBalance(Schema):
+    account: str
+    account_id: int
+    children_ids: str
+    total_balance: List[CurrencyBalance]
