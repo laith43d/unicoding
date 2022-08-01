@@ -1,3 +1,4 @@
+from asyncio.windows_events import NULL
 from ninja import Router
 from ninja.security import django_auth
 from django.shortcuts import get_object_or_404
@@ -39,7 +40,24 @@ def get_account_balance(request, account_id: int):
     account = get_object_or_404(Account, id=account_id)
 
     balance = account.balance()
-
+    if bool(account.children.all()) is True:
+        balance_parant = Balance(balances=list(balance))
+        childern_balances = []
+        for i in account.children.all():
+                childern_balances.append(list(i.balance()))
+                
+        childern_balance_objs = []
+        for i in childern_balances:
+            childern_balance_objs.append(Balance(balances=list(i)))
+        
+        for i in childern_balance_objs:
+            balance_parant.__add__(i)
+        
+        balance = [{'currency': 'USD', 'sum': balance_parant.balanceUSD},{'currency': 'IQD', 'sum': balance_parant.balanceIQD}]
+        
+        
+    
+    
     journal_entries = account.journal_entries.all()
 
     return 200, {'account': account.name, 'balance': list(balance), 'jes': list(journal_entries)}
@@ -48,10 +66,27 @@ def get_account_balance(request, account_id: int):
 @account_router.get('/account-balances/', response=List[GeneralLedgerOut])
 def get_account_balances(request):
     accounts = Account.objects.all()
+    
     result = []
     for a in accounts:
+        balance = a.balance()
+        if bool(a.children.all()) is True:
+            balance_parant = Balance(balances=list(balance))
+            childern_balances = []
+            for i in a.children.all():
+                    childern_balances.append(list(i.balance()))
+
+            childern_balance_objs = []
+            for i in childern_balances:
+                childern_balance_objs.append(Balance(balances=list(i)))
+
+            for i in childern_balance_objs:
+                balance_parant.__add__(i)
+        
+            balance = [{'currency': 'USD', 'sum': balance_parant.balanceUSD},{'currency': 'IQD', 'sum': balance_parant.balanceIQD}]
+        
         result.append({
-            'account': a.name, 'balance': list(a.balance())
+            'account': a.name, 'balance': list(balance)
         })
 
     return status.HTTP_200_OK, result
@@ -61,18 +96,33 @@ def get_account_balances(request):
 
 class Balance:
     def __init__(self, balances):
-        balance1 = balances[0]
-        balance2 = balances[1]
+        if len(balances) == 2:
+            balance1 = (balances[0])
+            balance2 = (balances[1])
 
-        if balance1['currency'] == 'USD':
-            balanceUSD = balance1['sum']
-            balanceIQD = balance2['sum']
+            if balance1['currency'] == 'USD':
+                balanceUSD = balance1['sum']
+                balanceIQD = balance2['sum']
+            else:
+                balanceIQD = balance1['sum']
+                balanceUSD = balance2['sum']
+
+            self.balanceUSD = balanceUSD
+            self.balanceIQD = balanceIQD
+
+        elif len(balances) == 1:
+            balance = (balances[0])
+            if balance['currency'] == 'USD':
+                self.balanceUSD = balance['sum']
+                self.balanceIQD = 0
+                
+            else:
+                self.balanceUSD = 0
+                self.balanceIQD = balance['sum']
+                
         else:
-            balanceIQD = balance1['sum']
-            balanceUSD = balance2['sum']
-
-        self.balanceUSD = balanceUSD
-        self.balanceIQD = balanceIQD
+            self.balanceUSD = 0
+            self.balanceIQD = 0
 
     def __add__(self, other):
         self.balanceIQD += other.balanceIQD
@@ -84,4 +134,3 @@ class Balance:
             'currency': 'IQD',
             'sum': self.balanceIQD
         }]
-
