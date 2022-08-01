@@ -1,6 +1,7 @@
 from ninja import Router
 from ninja.security import django_auth
 from django.shortcuts import get_object_or_404
+from accounting import services
 from accounting.models import Account, AccountTypeChoices
 from accounting.schemas import AccountOut, FourOFourOut, GeneralLedgerOut
 from typing import List
@@ -56,32 +57,10 @@ def get_account_balances(request):
 
     return status.HTTP_200_OK, result
 
+@account_router.get('/account-balances/')
+def get_account_balances(request,account_id:int):
+    account=Account.objects.get(id=account_id)
+    final=services.account_balances(account)
+    return status.HTTP_200_OK,{'account':account.name ,'balance':final}
 
-
-
-class Balance:
-    def __init__(self, balances):
-        balance1 = balances[0]
-        balance2 = balances[1]
-
-        if balance1['currency'] == 'USD':
-            balanceUSD = balance1['sum']
-            balanceIQD = balance2['sum']
-        else:
-            balanceIQD = balance1['sum']
-            balanceUSD = balance2['sum']
-
-        self.balanceUSD = balanceUSD
-        self.balanceIQD = balanceIQD
-
-    def __add__(self, other):
-        self.balanceIQD += other.balanceIQD
-        self.balanceUSD += other.balanceUSD
-        return [{
-            'currency': 'USD',
-            'sum': self.balanceUSD
-        }, {
-            'currency': 'IQD',
-            'sum': self.balanceIQD
-        }]
 
