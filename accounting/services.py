@@ -1,6 +1,5 @@
 from django.db import transaction as db_transaction
 from rest_framework import status
-from accounting.exceptions import AtomicAccountTransferException, ZeroAmountError, AccountingEquationError
 from accounting.models import Transaction, JournalEntry
 
 
@@ -32,37 +31,12 @@ def account_transfer(data):
         #     t.delete()
         #     return status.HTTP_400_BAD_REQUEST, {'detail': 'transaction is not valid'}
         return t
-class Balance:
-    def __init__(self, balances):
-        balance1 = balances[0]
-        balance2 = balances[1]
-
-        if balance1['currency'] == 'USD':
-            balanceUSD = balance1['sum']
-            balanceIQD = balance2['sum']
-        else:
-            balanceIQD = balance1['sum']
-            balanceUSD = balance2['sum']
-
-        self.balanceUSD = balanceUSD
-        self.balanceIQD = balanceIQD
-
-    def __add__(self, other):
-        self.balanceIQD += other.balanceIQD
-        self.balanceUSD += other.balanceUSD
-        return [{
-            'currency': 'USD',
-            'sum': self.balanceUSD
-        }, {
-            'currency': 'IQD',
-            'sum': self.balanceIQD
-        }]
-def account_balances(account):
+        
+def account_balance(account):
     child=account.children_account.all()
     balances=[]
     child_balance=[]
-    account_balance=account.balance()
-    
+    account_balance=account.balance() 
     for a in child:
         balance=a.balance()
         child_balance.append(list(balance))
@@ -73,7 +47,7 @@ def account_balances(account):
             balances.append(n)
 
     for f in list(account_balance):
-        balances.append(f)
+       balances.append(f)
  
     if child==[]:
         balances.append(account_balance)
@@ -87,7 +61,7 @@ def account_balances(account):
 def GiveFinalBalance(balancs):
     balanceUSD=0
     balanceIQD=0
-    
+
     for balance in balancs:
         if balance["currency"]=="USD":
             balanceUSD += balance["sum"]
@@ -100,4 +74,3 @@ def GiveFinalBalance(balancs):
         'currency': 'IQD',
         'sum': balanceIQD}]
     return final
-

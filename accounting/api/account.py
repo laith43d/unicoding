@@ -1,14 +1,10 @@
 from ninja import Router
-from ninja.security import django_auth
-from django.shortcuts import get_object_or_404
 from accounting import services
 from accounting.models import Account, AccountTypeChoices
 from accounting.schemas import AccountOut, FourOFourOut, GeneralLedgerOut
 from typing import List
-from django.db.models import Sum, Avg
 from rest_framework import status
 
-from restauth.authorization import AuthBearer
 
 account_router = Router(tags=['account'])
 
@@ -37,30 +33,20 @@ def get_account_types(request):
 
 @account_router.get('/account-balance/{account_id}', response=GeneralLedgerOut)
 def get_account_balance(request, account_id: int):
-    account = get_object_or_404(Account, id=account_id)
-
-    balance = account.balance()
-
-    journal_entries = account.journal_entries.all()
-
-    return 200, {'account': account.name, 'balance': list(balance), 'jes': list(journal_entries)}
+    account=Account.objects.get(id=account_id)
+    final=services.account_balance(account)
+    return status.HTTP_200_OK,{'account':account.name ,'balance':final}
 
 
 @account_router.get('/account-balances/', response=List[GeneralLedgerOut])
 def get_account_balances(request):
     accounts = Account.objects.all()
-    result = []
+    result=[]
     for a in accounts:
+        final=services.GiveFinalBalance(a.balance())
         result.append({
-            'account': a.name, 'balance': list(a.balance())
+            'account':a.name ,'balance':final
         })
-
-    return status.HTTP_200_OK, result
-
-@account_router.get('/account-balances/')
-def get_account_balances(request,account_id:int):
-    account=Account.objects.get(id=account_id)
-    final=services.account_balances(account)
-    return status.HTTP_200_OK,{'account':account.name ,'balance':final}
+    return status.HTTP_200_OK,result
 
 
