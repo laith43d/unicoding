@@ -48,8 +48,39 @@ class CurrencyChoices(models.TextChoices):
     IQD = 'IQD', 'IQD'
 
 
+# class Balance:
+#     def __init__(self, balances):
+#         balanceIQD = 0
+#         balanceUSD = 0
+#         for i in balances:
+#             if i['currency'] == 'USD':
+#                 balanceUSD = i['sum']
+#             if i['currency'] == 'IQD':
+#                 balanceIQD = i['sum']
+
+
+#         self.balanceUSD = balanceUSD
+#         self.balanceIQD = balanceIQD
+
+#     def __add__(self, other):
+#         self.balanceIQD += other.balanceIQD
+#         self.balanceUSD += other.balanceUSD
+#         return [{
+#             'currency': 'USD',
+#             'sum': self.balanceUSD
+#         }, {
+#             'currency': 'IQD',
+#             'sum': self.balanceIQD
+#         }]
+
+
 class Account(models.Model):
-    parent = models.ForeignKey('self', null=True, blank=True, on_delete=models.SET_NULL)
+    parent = models.ForeignKey('self', 
+                               null=True, 
+                               blank=True, 
+                               on_delete=models.SET_NULL,
+                               related_name='children'
+                              )
     type = models.CharField(max_length=255, choices=AccountTypeChoices.choices)
     name = models.CharField(max_length=255)
     code = models.CharField(max_length=20, null=True, blank=True)
@@ -57,36 +88,50 @@ class Account(models.Model):
     extra = models.JSONField(default=dict, null=True, blank=True)
 
     def __str__(self):
-        return f'{self.full_code} - {self.name}'
+        return f'{self.parent_id} - {self.name}'
 
     def balance(self):
         return self.journal_entries.values('currency').annotate(sum=Sum('amount')).order_by()
 
-    # def save(
-    #         self, force_insert=False, force_update=False, using=None, update_fields=None
-    # ):
-    #     creating = not bool(self.id)
-    #
-    #     if creating:
-    #         self.code = self.id
-    #         try:
-    #             self.full_code = f'{self.parent.full_code}{self.id}'
-    #         except AttributeError:
-    #             self.full_code = self.id
-    #
-    #     super(Account, self).save()
-    #
-    #     if creating:
-    #         self.refresh_from_db()
+
+    def parent_balance(self):
+        children = self.children.all()
+        
+        if len(children) == 0:   
+            return self.balance()
+
+        if len(children) == 1:  
+            return list(children[0].balance())
+        
+        children_balances = [ list(c.balance()) for c in children ]
+        
+        sum_USD = 0
+        sum_IQD = 0 
+
+        for lst in children_balances:   
+            for child in lst: 
+                if child['currency'] == 'USD':
+                    sum_USD += child['sum']
+                else:
+                    sum_IQD += child['sum']
+
+        return [{
+            'currency': 'USD',
+            'sum':sum_USD
+        }, 
+        {
+            'currency': 'IQD',
+            'sum': sum_IQD
+        }]  
 
 
-# @receiver(post_save, sender=Account)
-# def add_code_and_full_code(sender, instance, **kwargs):
-#     instance.code = instance.id
-#     if instance.parent:
-#         instance.full_code = f'{instance.parent.full_code}{instance.id}'
-#     else:
-#         instance.full_code = f'{instance.id}'
+        # balances_objects = [ Balance(i) for i in children_balance ]
+        # p = 0
+        # for i in range(len(balances_objects)) :
+        #     p = balances_objects[i].__add__(balances_objects[i+1])
+        #     if i+1 == len(balances_objects)-1:
+        #         break
+        # return p
 
 
 class Transaction(models.Model):
