@@ -39,12 +39,21 @@ def get_account_types(request):
 @account_router.get('/account-balance/{account_id}', response=GeneralLedgerOut)
 def get_account_balance(request, account_id: int):
     account = get_object_or_404(Account, id=account_id)
-
+    print(account.journal_entries.all())
+    temp_balance = [{'currency': 'IQD', 'sum': Decimal(0)},{'currency': 'USD', 'sum': Decimal(0)}]
     balance = account.balance()
-
-    journal_entries = account.journal_entries.all()
-
-    return 200, {'account': account.name, 'balance': list(balance), 'jes': list(journal_entries)}
+    if len(account.children.all()) > 0:
+        lisT_children = account.children.values('name')
+        if len(account.journal_entries.all()) > 0:
+            temp_balance = Balance(temp_balance) + Balance(balance)
+        for i in lisT_children:
+            s = Account.objects.get(name = i['name'])
+            b = s.balance()
+            temp_balance = Balance(temp_balance) + Balance(b)
+    else:
+        temp_balance = Balance(temp_balance) + Balance(balance)
+    result ={'account': account.name, 'balance': temp_balance}
+    return 200, result
 
 
 @account_router.get('/account-balances/', response=List[GeneralLedgerOut])
@@ -61,10 +70,9 @@ def get_account_balances(request):
                 s = Account.objects.get(name = i['name'])
                 b = s.balance()
                 temp_balance = Balance(temp_balance) + Balance(b)
-            result.append({'account': a.name, 'balance': temp_balance})
         else:
             temp_balance = Balance(temp_balance) + Balance(a.balance())
-            result.append({'account': a.name, 'balance': temp_balance})
+        result.append({'account': a.name, 'balance': temp_balance})
     return status.HTTP_200_OK, result
 
 
