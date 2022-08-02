@@ -34,6 +34,26 @@ def get_account_types(request):
     return {t[0]: t[1] for t in AccountTypeChoices.choices}
 
 
+def Balance(balances):
+
+        balance1 = balances[0]
+        balance2 = balances[1]
+
+        if balance1['currency'] == 'USD':
+            balanceUSD = balance1['sum']
+            balanceIQD = balance2['sum']
+        else:
+            balanceIQD = balance1['sum']
+            balanceUSD = balance2['sum']
+
+        return [{
+            'currency': 'USD',
+            'sum': balanceUSD
+        }, {
+            'currency': 'IQD',
+            'sum': balanceIQD
+        }]
+
 
 
 @account_router.get('/account-balance/{account_id}', response=GeneralLedgerOut)
@@ -64,24 +84,5 @@ def get_account_balance(request, account_id: int):
 
 
 
-def Balance(balances):
-
-        balance1 = balances[0]
-        balance2 = balances[1]
-
-        if balance1['currency'] == 'USD':
-            balanceUSD = balance1['sum']
-            balanceIQD = balance2['sum']
-        else:
-            balanceIQD = balance1['sum']
-            balanceUSD = balance2['sum']
-
-        return [{
-            'currency': 'USD',
-            'sum': balanceUSD
-        }, {
-            'currency': 'IQD',
-            'sum': balanceIQD
-        }]
 
 
