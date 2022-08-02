@@ -43,7 +43,7 @@ def get_account_balances(request):
     accounts = Account.objects.all()
     result=[]
     for a in accounts:
-        final=services.GiveFinalBalance(a.balance())
+        final=services.account_balance(a)
         result.append({
             'account':a.name ,'balance':final
         })
