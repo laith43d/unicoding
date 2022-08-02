@@ -38,6 +38,8 @@ INSTALLED_APPS = [
 
     'restauth',
     'accounting',
+    'rest_framework',
+    'mptt'
 ]
 
 AUTH_USER_MODEL = 'restauth.EmailAccount'
