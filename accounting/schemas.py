@@ -70,9 +70,10 @@ class CurrencyBalance(Schema):
 
 
 class GeneralLedgerOut(Schema):
-    id :int
     parent_id : Optional[int]
     account: str
     balance: List[CurrencyBalance]
-    #children : List['GeneralLedgerOut'] =None
-    # jes: List[JournalEntryOut]
+
+class GeneralLedgerOutBalances(GeneralLedgerOut):
+    id :int
+ 

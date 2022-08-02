@@ -2,7 +2,7 @@ from ninja import Router
 from ninja.security import django_auth
 from django.shortcuts import get_object_or_404
 from accounting.models import Account, AccountTypeChoices
-from accounting.schemas import AccountOut, FourOFourOut, GeneralLedgerOut
+from accounting.schemas import AccountOut, FourOFourOut, GeneralLedgerOut, GeneralLedgerOutBalances
 from typing import List
 from django.db.models import Sum, Avg
 from rest_framework import status
@@ -50,9 +50,9 @@ def get_account_balance(request, account_id: int):
     return 200, {'account': account.name, 'balance': list(balance), 'jes': list(journal_entries)}
 
 
-@account_router.get('/account-balances/', response=List[GeneralLedgerOut])
+@account_router.get('/account-balances/', response=List[GeneralLedgerOutBalances])
 def get_account_balances(request):
-    accounts = Account.objects.order_by('id')
+    accounts = Account.objects.all()
     result = []
  
     parent_list = Account.objects.filter(parent_id__isnull=False).values_list('parent',flat=True)
@@ -65,12 +65,12 @@ def get_account_balances(request):
                 'parent_id':a.parent_id ,
                 'id':a.id 
             }) 
-        else:
-            result.append({
-                'account': a.name, 
-                'balance': list( a.balance() ),
-                'parent_id':a.parent_id , 
-                'id':a.id 
-            }) 
+        
+        result.append({
+            'account': a.name, 
+            'balance': list( a.balance() ),
+            'parent_id':a.parent_id , 
+            'id':a.id 
+        }) 
          
     return status.HTTP_200_OK, result
