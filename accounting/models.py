@@ -65,7 +65,7 @@ class Account(MPTTModel):
             account.journal_entries.values('currency').annotate(sum=Sum('amount')).order_by()
             for account in self.get_descendants(include_self=True)
         ]
-        return result
+        return Sum(result)
 
     # def save(
     #         self, force_insert=False, force_update=False, using=None, update_fields=None
