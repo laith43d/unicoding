@@ -57,8 +57,6 @@ def get_account_balances(request):
     return status.HTTP_200_OK, result
 
 
-
-
 class Balance:
     def __init__(self, balances):
         balance1 = balances[0]
