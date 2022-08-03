@@ -32,4 +32,47 @@ def account_transfer(data):
         #     t.delete()
         #     return status.HTTP_400_BAD_REQUEST, {'detail': 'transaction is not valid'}
         return t
+        
+def account_balance(account):
+    child=account.children_account.all()
+    balances=[]
+    child_balance=[]
+    account_balance=account.balance() 
+    for a in child:
+        balance=a.balance()
+        child_balance.append(list(balance))
+
+
+    for j in child_balance:
+        for n in j:
+            balances.append(n)
+
+    for f in list(account_balance):
+       balances.append(f)
+ 
+    if child==[]:
+        balances.append(account_balance)
+        final=GiveFinalBalance(balances)
+    else:
+        final= GiveFinalBalance(balances)
+    
+    print(balances)
+    return final
+
+def GiveFinalBalance(balancs):
+    balanceUSD=0
+    balanceIQD=0
+
+    for balance in balancs:
+        if balance["currency"]=="USD":
+            balanceUSD += balance["sum"]
+        else:
+            balanceIQD += balance["sum"]
+    
+    final=[{
+        'currency': 'USD',
+        'sum': balanceUSD}, {
+        'currency': 'IQD',
+        'sum': balanceIQD}]
+    return final
 
