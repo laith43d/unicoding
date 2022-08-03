@@ -38,17 +38,17 @@ def account_balance(account):
     balances=[]
     child_balance=[]
     account_balance=account.balance() 
-    for a in child:
-        balance=a.balance()
+    for i in child:
+        balance=i.balance()
         child_balance.append(list(balance))
 
 
-    for j in child_balance:
-        for n in j:
-            balances.append(n)
+    for f in child_balance:
+        for j in f:
+            balances.append(j)
 
-    for f in list(account_balance):
-       balances.append(f)
+    for n in list(account_balance):
+       balances.append(n)
  
     if child==[]:
         balances.append(account_balance)
