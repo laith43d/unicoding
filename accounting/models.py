@@ -3,7 +3,7 @@ from django.db.models import Sum
 from django.dispatch import receiver
 from django.db.models.signals import post_save
 from accounting.exceptions import AccountingEquationError
-
+from decimal import Decimal
 '''
 
 Account
@@ -48,8 +48,50 @@ class CurrencyChoices(models.TextChoices):
     IQD = 'IQD', 'IQD'
 
 
+class Balance:
+    def __init__(self, balances):
+        try:
+            balance1 = balances[0]
+        except IndexError:
+            balance1 = {'currency': 'USD', 'sum': 0}
+        try:
+            balance2 = balances[1]
+        except IndexError:
+            if balance1['currency'] == 'USD':
+                balance2 = {'currency': 'IQD', 'sum': Decimal(0)}
+            else:
+                balance2 = {'currency': 'USD', 'sum': Decimal(0)}
+
+        if balance1['currency'] == 'USD':
+            balanceUSD = balance1['sum']
+            balanceIQD = balance2['sum']
+        else:
+            balanceIQD = balance1['sum']
+            balanceUSD = balance2['sum']
+
+        self.balanceUSD = balanceUSD
+        self.balanceIQD = balanceIQD
+
+    def __add__(self, other):
+        self.balanceIQD += other.balanceIQD
+        self.balanceUSD += other.balanceUSD
+        return [{
+            'currency': 'USD',
+            'sum': self.balanceUSD
+        }, {
+            'currency': 'IQD',
+            'sum': self.balanceIQD
+        }]
+    def __radd__(self, other):
+        if other == 0:  #
+            return self
+        else:
+            return self.__add__(other)
+
+
+
 class Account(models.Model):
-    parent = models.ForeignKey('self', null=True, blank=True, on_delete=models.SET_NULL)
+    parent = models.ForeignKey('self', null=True, blank=True, on_delete=models.SET_NULL, related_name='children')
     type = models.CharField(max_length=255, choices=AccountTypeChoices.choices)
     name = models.CharField(max_length=255)
     code = models.CharField(max_length=20, null=True, blank=True)
@@ -61,6 +103,23 @@ class Account(models.Model):
 
     def balance(self):
         return self.journal_entries.values('currency').annotate(sum=Sum('amount')).order_by()
+
+    def M_Balance(self):
+        M_child = self.children.all()
+        list_balances = []
+
+        if len(M_child) == 0:
+            return self.balance()
+
+        elif len(M_child) > 0:
+            if len(M_child) == 1:
+                return self.balance()
+            else:
+                for r in list(M_child):
+                    list_child = r.balance()
+                    obj = Balance(list_child)
+                    list_balances.append(obj)
+        return sum(list_balances)
 
     # def save(
     #         self, force_insert=False, force_update=False, using=None, update_fields=None
