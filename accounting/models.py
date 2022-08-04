@@ -3,6 +3,8 @@ from django.db.models import Sum
 from django.dispatch import receiver
 from django.db.models.signals import post_save
 from accounting.exceptions import AccountingEquationError
+from mptt.models import MPTTModel, TreeForeignKey
+
 
 '''
 
@@ -48,8 +50,8 @@ class CurrencyChoices(models.TextChoices):
     IQD = 'IQD', 'IQD'
 
 
-class Account(models.Model):
-    parent = models.ForeignKey('self', null=True, blank=True, on_delete=models.SET_NULL)
+class Account(MPTTModel):
+    parent = TreeForeignKey('self', null=True, blank=True, on_delete=models.SET_NULL, related_name='children')
     type = models.CharField(max_length=255, choices=AccountTypeChoices.choices)
     name = models.CharField(max_length=255)
     code = models.CharField(max_length=20, null=True, blank=True)
@@ -60,7 +62,11 @@ class Account(models.Model):
         return f'{self.full_code} - {self.name}'
 
     def balance(self):
-        return self.journal_entries.values('currency').annotate(sum=Sum('amount')).order_by()
+        result = [
+            account.journal_entries.values('currency').annotate(sum=Sum('amount')).order_by()
+            for account in self.get_descendants(include_self=True)
+        ]
+        return result
 
     # def save(
     #         self, force_insert=False, force_update=False, using=None, update_fields=None
