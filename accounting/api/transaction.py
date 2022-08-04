@@ -13,7 +13,7 @@ transaction_router = Router()
 # 
 #     return 200, transactions
 
-@transaction_router.post('/add-transaction', response=TransactionOutSchema)
+@transaction_router.post('/add-transaction', response=TransactionOutSchema, tags = ['others'])
 def add_transaction(request, transaction_in: TransactionIn):
     t = services.account_transfer(transaction_in)
     return status.HTTP_200_OK, {

@@ -39,6 +39,9 @@ def get_balance_by_id(id):
     try:
         account = Account.objects.get(id = id)
         total_balance = Balance(account.balance())
+        print(account.balance(), 13123123)
+        print('----------------')
+        print(total_balance.balanceIQD)
         x = account
         children_ids = []
         while 1:

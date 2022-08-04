@@ -8,7 +8,7 @@ from accounting.schemas import JournalEntryOut
 je_router = Router()
 
 
-@je_router.get('/get-all', response=List[JournalEntryOut])
+@je_router.get('/get-all', response=List[JournalEntryOut], tags = ['others'])
 def get_all(request):
     jes = JournalEntry.objects.all()
 
