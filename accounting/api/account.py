@@ -76,8 +76,6 @@ def get_account_balances(request):
     return status.HTTP_200_OK, result
 
 
-
-
 class Balance:
     def __init__(self, balances):
         if len(balances) == 2 :
@@ -113,4 +111,16 @@ class Balance:
             'currency': 'USD',
             'sum': self.balanceUSD
         }]
-
+    def __lt__(self, other):
+        if self.balanceIQD < other.balanceIQD :print(True)
+        else:print(False)
+        if self.balanceUSD < other.balanceUSD :print(True)
+        else:print(False)
+    def __gt__(self, other):
+        if self.balanceIQD > other.balanceIQD :print(True)
+        else:print(False)
+        if self.balanceUSD > other.balanceUSD :print(True)
+        else:print(False)
+    def is_zero(self):
+        if self.balanceIQD == 0 and self.balanceUSD == 0:print(True)
+        else:print(False)
