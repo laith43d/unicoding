@@ -74,6 +74,21 @@ class Balance:
             'sum': self.balanceUSD
         }]
 
+    def __gt__(self, other):
+        bIQD = self.balanceIQD > other.balanceIQD
+        bUSD = self.balanceUSD > other.balanceUSD
+        return bIQD, bUSD
+
+    def __lt__(self, other):
+        bIQD = self.balanceIQD < other.balanceIQD
+        bUSD = self.balanceUSD < other.balanceUSD
+        return bIQD, bUSD
+
+    def is_zero(self):
+        bIQD = True if self.balanceIQD == 0 else False
+        bUSD = True if self.balanceUSD == 0 else False
+        return bIQD, bUSD
+
 
 class Account(models.Model):
     parent = models.ForeignKey('self', null=True, blank=True, on_delete=models.SET_NULL, related_name='children')
@@ -98,8 +113,9 @@ class Account(models.Model):
             children = self.children.all()
             for child_obj in children:
                 balance_acc_obj = Balance(child_obj.balance())
-                total_balance=balance_acc_obj.__add__(balance_acc)
+                total_balance = balance_acc_obj.__add__(balance_acc)
             return total_balance
+
 
 # def save(
 #         self, force_insert=False, force_update=False, using=None, update_fields=None

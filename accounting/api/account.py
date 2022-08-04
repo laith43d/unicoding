@@ -26,7 +26,7 @@ def get_one(request, account_id: int):
         account = Account.objects.get(id=account_id)
         return account
     except Account.DoesNotExist:
-        return 404, {'detail': f'Account with id {account_id} does not exist'}
+        return status.HTTP_404_NOT_FOUND, {'detail': f'Account with id {account_id} does not exist'}
 
 
 @account_router.get('/get_account_types/')
