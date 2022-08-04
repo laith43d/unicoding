@@ -65,8 +65,9 @@ class TransactionIn(Schema):
 
 
 class CurrencyBalance(Schema):
-    currency: str
-    sum: str
+    currency: str 
+    sum: str 
+
 
 
 class GeneralLedgerOut(Schema):
