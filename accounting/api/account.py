@@ -6,6 +6,7 @@ from accounting.schemas import AccountOut, FourOFourOut, GeneralLedgerOut
 from typing import List
 from django.db.models import Sum, Avg
 from rest_framework import status
+import mptt
 
 from restauth.authorization import AuthBearer
 
@@ -60,17 +61,15 @@ def get_account_balances(request):
 
 
 class Balance:
+
     def __init__(self, balances):
-        balance1 = balances[0]
-        balance2 = balances[1]
-
-        if balance1['currency'] == 'USD':
-            balanceUSD = balance1['sum']
-            balanceIQD = balance2['sum']
-        else:
-            balanceIQD = balance1['sum']
-            balanceUSD = balance2['sum']
-
+        balanceIQD = 0
+        balanceUSD = 0
+        for i in balances:
+            if i['currency'] == 'USD':
+                balanceUSD = i['sum']
+            if i['currency'] == 'IQD':
+                balanceIQD = i['sum']
         self.balanceUSD = balanceUSD
         self.balanceIQD = balanceIQD
 
@@ -85,3 +84,8 @@ class Balance:
             'sum': self.balanceIQD
         }]
 
+    def __radd__(self,other):
+        if other == 0:
+            return self
+        else:
+            return self.__add__(other)

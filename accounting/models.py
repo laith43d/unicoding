@@ -3,6 +3,11 @@ from django.db.models import Sum
 from django.dispatch import receiver
 from django.db.models.signals import post_save
 from accounting.exceptions import AccountingEquationError
+from mptt.models import TreeForeignKey,MPTTModel
+from mptt.fields import TreeForeignKey
+from django.shortcuts import get_object_or_404
+
+
 
 '''
 
@@ -48,8 +53,8 @@ class CurrencyChoices(models.TextChoices):
     IQD = 'IQD', 'IQD'
 
 
-class Account(models.Model):
-    parent = models.ForeignKey('self', null=True, blank=True, on_delete=models.SET_NULL)
+class Account(MPTTModel):
+    parent = TreeForeignKey('self', null=True, blank=True, on_delete=models.SET_NULL)
     type = models.CharField(max_length=255, choices=AccountTypeChoices.choices)
     name = models.CharField(max_length=255)
     code = models.CharField(max_length=20, null=True, blank=True)
@@ -60,7 +65,13 @@ class Account(models.Model):
         return f'{self.full_code} - {self.name}'
 
     def balance(self):
-        return self.journal_entries.values('currency').annotate(sum=Sum('amount')).order_by()
+        result = [
+            account.journal_entries.values('currency').annotate(sum=Sum('amount')).order_by()
+            for account in self.get_descendants(include_self=False)
+
+        ]
+        return result
+        #return self.journal_entries.values('currency').annotate(sum=Sum('amount')).order_by()
 
     # def save(
     #         self, force_insert=False, force_update=False, using=None, update_fields=None
