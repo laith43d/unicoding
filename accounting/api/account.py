@@ -86,6 +86,29 @@ class Balance:
         self.currency_balance_list = currency_balance_list
     def sinsOfTheFather(self):
         return self.currency_balance_list
+    def __gt__(self,other):
+        whichCurrencyBigger = []
+        if self.balanceUSD > other.balanceUSD:
+            whichCurrencyBigger.append(True)
+        else:
+            whichCurrencyBigger.append(False)
+            
+        if self.balanceIQD > other.balanceIQD:
+            whichCurrencyBigger.append(True)
+        else:
+            whichCurrencyBigger.append(False)
+            
+            return whichCurrencyBigger
+    def isZero(self):
+        if not self.balanceUSD and not self.balanceIQD:
+            return True
+        return False
+        
+# b1 = Balance([[{'currency': 'USD', 'sum': Decimal('6000')},{'currency': 'IQD', 'sum': Decimal('6000000')}]])
+# b2 = Balance([[{'currency': 'USD', 'sum': Decimal('6000')}]])
+# print(b1 > b2)
+# b3 = Balance([[{'currency': 'USD', 'sum': Decimal('0')}]])
+# print(b3.isZero())
     
 @account_router.get('/account-balances/', response=List[GeneralLedgerOut])
 def get_account_balances(request):
