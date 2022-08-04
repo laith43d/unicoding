@@ -2,6 +2,7 @@ from django.db import models
 from django.db.models import Sum
 from accounting.api import Balance
 from accounting.exceptions import AccountingEquationError
+from mptt.models import MPTTModel, TreeForeignKey
 
 '''
 
@@ -59,7 +60,11 @@ class Account(models.Model):
         return f'{self.full_code} - {self.name}'
 
     def balance(self):
-        return self.journal_entries.values('currency').annotate(sum=Sum('amount')).order_by()
+        result = [
+            account.journal_entries.values('currency').annotate(sum=Sum('amount')).order_by()
+            for account in self.get_descendants(include_self=True)
+        ]
+        return result
 
 
 
