@@ -1,7 +1,7 @@
 from django.db import transaction as db_transaction
 from rest_framework import status
 from accounting.exceptions import AtomicAccountTransferException, ZeroAmountError, AccountingEquationError
-from accounting.models import Transaction, JournalEntry
+import accounting.models
 
 
 @db_transaction.atomic()
@@ -9,19 +9,19 @@ def account_transfer(data):
     try:
         if data.je.amount == 0:
             return status.HTTP_400_BAD_REQUEST, {'detail': 'transaction amount should be more than zero'}
-        t = Transaction.objects.create(
+        t = accounting.models.Transaction.objects.create(
             type=data.type,
             description=data.description
         )
 
-        cje = JournalEntry.objects.create(account_id=data.je.credit_account,
-                                          transaction=t,
-                                          amount=data.je.amount,
-                                          currency=data.je.currency)
-        dje = JournalEntry.objects.create(account_id=data.je.debit_account,
-                                          transaction=t,
-                                          amount=data.je.amount * -1,
-                                          currency=data.je.currency)
+        cje = accounting.models.JournalEntry.objects.create(account_id=data.je.credit_account,
+                                                            transaction=t,
+                                                            amount=data.je.amount,
+                                                            currency=data.je.currency)
+        dje = accounting.models.JournalEntry.objects.create(account_id=data.je.debit_account,
+                                                            transaction=t,
+                                                            amount=data.je.amount * -1,
+                                                            currency=data.je.currency)
     except Exception:
         return status.HTTP_404_NOT_FOUND, {'detail': 'error during transaction creation'}
 
