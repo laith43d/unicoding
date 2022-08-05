@@ -11,6 +11,11 @@ class AccountAdmin(admin.ModelAdmin):
     list_filter = ['type']
     ordering = ['full_code']
 
+@admin.register(JournalEntry)
+class JEAdmin(admin.ModelAdmin):
+    list_display = ['id', 'amount', 'currency']
+
+
 
 admin.site.register(Transaction)
-admin.site.register(JournalEntry)
+

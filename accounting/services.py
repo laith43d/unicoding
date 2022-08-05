@@ -2,6 +2,7 @@ from django.db import transaction as db_transaction
 from rest_framework import status
 from accounting.exceptions import AtomicAccountTransferException, ZeroAmountError, AccountingEquationError
 from accounting.models import Transaction, JournalEntry
+from django.db.models import Sum
 
 
 @db_transaction.atomic()
