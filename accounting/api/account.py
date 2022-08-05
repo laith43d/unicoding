@@ -5,7 +5,7 @@ from accounting.models import Account, AccountTypeChoices
 from accounting.schemas import AccountOut, FourOFourOut, GeneralLedgerOut
 from typing import List
 from django.db.models import Sum, Avg
-from rest_framework import status
+from http import HTTPStatus
 
 from restauth.authorization import AuthBearer
 
@@ -14,7 +14,7 @@ account_router = Router(tags=['account'])
 
 @account_router.get("/get_all", response=List[AccountOut])
 def get_all(request):
-    return status.HTTP_200_OK, Account.objects.order_by('full_code')
+    return HTTPStatus.OK, Account.objects.order_by('full_code')
 
 
 @account_router.get('/get_one/{account_id}/', response={
@@ -34,33 +34,38 @@ def get_account_types(request):
     return {t[0]: t[1] for t in AccountTypeChoices.choices}
 
 
+
+
 @account_router.get('/account-balance/{account_id}', response=GeneralLedgerOut)
 def get_account_balance(request, account_id: int):
-    account = get_object_or_404(Account, id=account_id)
+    account = Account.objects.get(id=account_id)
+    children_accounts = account.children.all()
+    account_balance = account.balance()
+    children_balances=[]
+    balances=[]
 
-    balance = account.balance()
+    for a in children_accounts:
+        balance = a.balance()
+        children_balances.append(list(balance))
 
-    journal_entries = account.journal_entries.all()
+    for a in children_balances:
+        for i in a:
+            balances.append(i)
 
-    return 200, {'account': account.name, 'balance': list(balance), 'jes': list(journal_entries)}
+    for a in list(account_balance):
+        balances.append(a)
 
+    if account.parent == None:
+        final_balance= Balance(balances)
+    else:
+        final_balance=list(children_balances)+list(account_balance)
 
-@account_router.get('/account-balances/', response=List[GeneralLedgerOut])
-def get_account_balances(request):
-    accounts = Account.objects.all()
-    result = []
-    for a in accounts:
-        result.append({
-            'account': a.name, 'balance': list(a.balance())
-        })
-
-    return status.HTTP_200_OK, result
-
-
+    return HTTPStatus.OK, {'account': account.name, 'balance':final_balance}
 
 
-class Balance:
-    def __init__(self, balances):
+
+def Balance(balances):
+
         balance1 = balances[0]
         balance2 = balances[1]
 
@@ -71,17 +76,11 @@ class Balance:
             balanceIQD = balance1['sum']
             balanceUSD = balance2['sum']
 
-        self.balanceUSD = balanceUSD
-        self.balanceIQD = balanceIQD
-
-    def __add__(self, other):
-        self.balanceIQD += other.balanceIQD
-        self.balanceUSD += other.balanceUSD
         return [{
             'currency': 'USD',
-            'sum': self.balanceUSD
+            'sum': balanceUSD
         }, {
             'currency': 'IQD',
-            'sum': self.balanceIQD
+            'sum': balanceIQD
         }]
 
