@@ -34,26 +34,6 @@ def get_account_types(request):
     return {t[0]: t[1] for t in AccountTypeChoices.choices}
 
 
-def Balance(balances):
-
-        balance1 = balances[0]
-        balance2 = balances[1]
-
-        if balance1['currency'] == 'USD':
-            balanceUSD = balance1['sum']
-            balanceIQD = balance2['sum']
-        else:
-            balanceIQD = balance1['sum']
-            balanceUSD = balance2['sum']
-
-        return [{
-            'currency': 'USD',
-            'sum': balanceUSD
-        }, {
-            'currency': 'IQD',
-            'sum': balanceIQD
-        }]
-
 
 
 @account_router.get('/account-balance/{account_id}', response=GeneralLedgerOut)
@@ -76,7 +56,7 @@ def get_account_balance(request, account_id: int):
         balances.append(a)
 
     if account.parent == None:
-        final_balance= Balance(balances)
+        final_balance= get_balance(balances)
     else:
         final_balance=list(children_balances)+list(account_balance)
 
@@ -84,5 +64,15 @@ def get_account_balance(request, account_id: int):
 
 
 
+def get_balance(balances):
+    IQD_balance=0
+    USD_balance=0
+    for a in balances:
+        if a['currency'] == 'IQD':
+            IQD_balance += a['sum'] 
+        else:
+            USD_balance += a['sum']
 
-
+    final_balance = [{'currency':'USD', 'sum':USD_balance},{'currency':'IQD', 'sum':IQD_balance}]
+    return final_balance
+    
