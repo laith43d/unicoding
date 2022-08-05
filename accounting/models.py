@@ -49,7 +49,8 @@ class CurrencyChoices(models.TextChoices):
 
 
 class Account(models.Model):
-    parent = models.ForeignKey('self', null=True, blank=True, on_delete=models.SET_NULL, related_name='account_children')
+    parent = models.ForeignKey('self', null=True, blank=True, on_delete=models.SET_NULL,
+                               related_name='account_children')
     type = models.CharField(max_length=255, choices=AccountTypeChoices.choices)
     name = models.CharField(max_length=255)
     code = models.CharField(max_length=20, null=True, blank=True)
@@ -150,8 +151,25 @@ class Balance:
             'sum': self.balanceIQD
         }]
 
-    def __radd__(self, other):  # Add reversal method
+    def __gt__(self, other):
+        bIQD = bool(self.balanceIQD > other.balanceIQD)
+        bUSD = bool(self.balanceUSD > other.balanceUSD)
+        return bIQD, bUSD
+
+    def __lt__(self, other):
+        bIQD = bool(self.balanceIQD < other.balanceIQD)
+        bUSD = bool(self.balanceUSD < other.balanceUSD)
+        return bIQD, bUSD
+
+    def is_zero(self):
+        if self.balanceIQD == 0 & self.balanceUSD == 0:
+            return True
+        else:
+            return False
+
+    def __radd__(self, other):
         if other == 0:
             return self
         else:
             return self.__add__(other)
+
