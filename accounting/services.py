@@ -1,7 +1,7 @@
 from django.db import transaction as db_transaction
 from rest_framework import status
 from accounting.exceptions import AtomicAccountTransferException, ZeroAmountError, AccountingEquationError
-from accounting.models import Transaction, JournalEntry
+from accounting.models import Account, Balance, Transaction, JournalEntry
 
 
 @db_transaction.atomic()
@@ -33,3 +33,33 @@ def account_transfer(data):
         #     return status.HTTP_400_BAD_REQUEST, {'detail': 'transaction is not valid'}
         return t
 
+#Task 3 Service Function ✍️(◔◡◔) ↓↓↓↓↓↓↓↓↓↓↓↓
+
+def get_balance_by_id(id):
+    try:
+        account = Account.objects.get(id = id)
+        total_balance = Balance(account.balance())
+        print(account.balance(), 13123123)
+        print('----------------')
+        print(total_balance.balanceIQD)
+        x = account
+        children_ids = []
+        while 1:
+            try:
+                x = x.child.all()
+                for x in x:
+                    if x.id:
+                        children_ids.append(x.id)
+                        if x:
+                            balance_x = Balance(x.balance())
+                            total_balance.__add__(balance_x)
+                    else: break
+            except: break
+        return [[{
+            'currency': 'USD',
+            'sum': f'{total_balance.balanceUSD}'
+        }, {
+            'currency': 'IQD',
+            'sum': f'{total_balance.balanceIQD}'
+        }], account.name, children_ids]
+    except: return None

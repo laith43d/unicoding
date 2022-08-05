@@ -28,7 +28,6 @@ JournalEntry
 
 '''
 
-
 class AccountTypeChoices(models.TextChoices):
     ASSETS = 'ASSETS', 'Assets'
     LIABILITIES = 'LIABILITIES', 'Liabilities'
@@ -49,7 +48,7 @@ class CurrencyChoices(models.TextChoices):
 
 
 class Account(models.Model):
-    parent = models.ForeignKey('self', null=True, blank=True, on_delete=models.SET_NULL)
+    parent = models.ForeignKey('self', null=True, blank=True, on_delete=models.SET_NULL, related_name = 'child')
     type = models.CharField(max_length=255, choices=AccountTypeChoices.choices)
     name = models.CharField(max_length=255)
     code = models.CharField(max_length=20, null=True, blank=True)
@@ -61,32 +60,6 @@ class Account(models.Model):
 
     def balance(self):
         return self.journal_entries.values('currency').annotate(sum=Sum('amount')).order_by()
-
-    # def save(
-    #         self, force_insert=False, force_update=False, using=None, update_fields=None
-    # ):
-    #     creating = not bool(self.id)
-    #
-    #     if creating:
-    #         self.code = self.id
-    #         try:
-    #             self.full_code = f'{self.parent.full_code}{self.id}'
-    #         except AttributeError:
-    #             self.full_code = self.id
-    #
-    #     super(Account, self).save()
-    #
-    #     if creating:
-    #         self.refresh_from_db()
-
-
-# @receiver(post_save, sender=Account)
-# def add_code_and_full_code(sender, instance, **kwargs):
-#     instance.code = instance.id
-#     if instance.parent:
-#         instance.full_code = f'{instance.parent.full_code}{instance.id}'
-#     else:
-#         instance.full_code = f'{instance.id}'
 
 
 class Transaction(models.Model):
@@ -111,3 +84,61 @@ class JournalEntry(models.Model):
 
     def __str__(self):
         return f'{self.amount} - {self.currency}'
+
+#Task 3 & 4 Balance Function Alterations ✍️(◔◡◔) ↓↓↓↓↓↓↓↓↓↓↓↓
+
+class Balance:
+
+    def __init__(self, balances):
+        if balances:
+            balance1 = balances[0]
+            try:
+                if balances[1]:
+                    balance2 = balances[1]
+                    if balance1['currency'] == 'USD':
+                        balanceUSD = int(balance1['sum'])
+                        balanceIQD = int(balance2['sum'])
+                    else:
+                        balanceIQD = int(balance1['sum'])
+                        balanceUSD = int(balance2['sum'])
+                    self.balanceUSD = balanceUSD
+                    self.balanceIQD = balanceIQD
+            except:
+                if balance1['currency'] == 'USD':
+                    balanceUSD = int(balance1['sum'])
+                    self.balanceUSD = balanceUSD
+                    self.balanceIQD = 0
+                else:
+                    balanceIQD = int(balance1['sum'])
+                    self.balanceIQD = balanceIQD
+                    self.balanceUSD = 0
+        else:
+            balanceUSD = 0
+            balanceIQD = 0
+            self.balanceUSD = balanceUSD
+            self.balanceIQD = balanceIQD
+
+    def __add__(self, other):
+        self.balanceIQD += other.balanceIQD
+        self.balanceUSD += other.balanceUSD
+        return [{
+            'currency': 'USD',
+            'sum': self.balanceUSD
+        }, {
+            'currency': 'IQD',
+            'sum': self.balanceIQD
+        }]
+
+    def __gt__(self, other):
+        IQDBool = self.balanceIQD > other.balanceIQD
+        USDBool = self.balanceUSD > other.balanceUSD
+        return (IQDBool, USDBool)
+
+    def __lt__(self, other):
+        IQDBool = self.balanceIQD < other.balanceIQD
+        USDBool = self.balanceUSD < other.balanceUSD
+        return (IQDBool, USDBool)
+
+    def is_zero(self):
+        if self.balanceIQD == 0 and self.balanceUSD == 0: return True 
+        else: return False
