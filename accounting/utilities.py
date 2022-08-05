@@ -10,6 +10,24 @@ class Balance:
 
         self.balanceUSD, self.balanceIQD = balanceUSD, balanceIQD
 
+    def __balance__(self):
+        return [{
+            'currency': 'USD',
+            'sum': self.balanceUSD
+        }, {
+            'currency': 'IQD',
+            'sum': self.balanceIQD
+        }]
+
+    def __isZero__(self):
+        return self.balanceUSD == 0 and self.balanceIQD == 0
+
+    def __isGreaterThan__(self, obj):
+        return (self.balanceUSD > obj[0]['sum'], self.balanceIQD > obj[1]['sum'])
+
+    def __isLessThan__(self, obj):
+        return (self.balanceUSD < obj[0]['sum'], self.balanceIQD < obj[1]['sum'])
+
     def __add__(self, other):
         self.balanceIQD += other.balanceIQD
         self.balanceUSD += other.balanceUSD
