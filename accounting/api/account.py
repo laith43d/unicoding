@@ -65,7 +65,6 @@ def get_account_balances(request):
     for a in accounts.all():
         total = None
         main_balance = Balance(a.balance())
-
         children = a.children.all()
 
         for child in children:
@@ -90,19 +89,19 @@ class Balance:
             if i['currency'] == 'IQD':
                 balanceIQD = i['sum']
 
-        # if balance1['currency'] == 'USD':
-        #     balanceUSD = balance1['sum']
-        #     balanceIQD = balance2['sum']
-        # else:
-        #     balanceIQD = balance1['sum']
-        #     balanceUSD = balance2['sum']
+            if balance1['currency'] == 'USD':
+                balanceUSD = balance1['sum']
+                balanceIQD = balance2['sum']
+            else:
+                balanceIQD = balance1['sum']
+                balanceUSD = balance2['sum']
 
         self.balanceUSD = balanceUSD
         self.balanceIQD = balanceIQD
-        
+
         if self.balanceUSD == 0 :
             self.balanceUSD = 0
-            
+
         if self.balanceIQD == 0 :
             self.balanceIQD = 0
         
@@ -111,12 +110,7 @@ class Balance:
     def __add__(self, other):
         self.balanceIQD += other.balanceIQD
         self.balanceUSD += other.balanceUSD
-        
-        
-            
-        
-        
-        
+
         return [{
             'currency': 'USD',
             'sum': self.balanceUSD

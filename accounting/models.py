@@ -62,22 +62,21 @@ class Account(models.Model):
     def balance(self):
         return self.journal_entries.values('currency').annotate(sum=Sum('amount')).order_by()
 
-    # def save(
-    #         self, force_insert=False, force_update=False, using=None, update_fields=None
-    # ):
-    #     creating = not bool(self.id)
-    #
-    #     if creating:
-    #         self.code = self.id
-    #         try:
-    #             self.full_code = f'{self.parent.full_code}{self.id}'
-    #         except AttributeError:
-    #             self.full_code = self.id
-    #
-    #     super(Account, self).save()
-    #
-    #     if creating:
-    #         self.refresh_from_db()
+    def save(
+            self, force_insert=False, force_update=False, using=None, update_fields=None
+            ):
+            creating = not bool(self.id)
+            
+    
+            if creating:
+                self.code = self.id
+                try:
+                    self.full_code = f'{self.parent.full_code}{self.id}'
+                except AttributeError:
+                    self.full_code = self.id
+                    super(Account, self).save()
+                    if creating:
+                        self.refresh_from_db()
 
 
 # @receiver(post_save, sender=Account)
