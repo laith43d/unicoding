@@ -28,6 +28,8 @@ JournalEntry
 * Each Transaction should consist of two or more even numbered Journal Entries
 
 '''
+
+
 class Balance:
 
     def __init__(self, balances):
@@ -57,6 +59,29 @@ class Balance:
             return self
         else:
             return self.__add__(other)
+
+    def __gt__(self, other):
+        XIQ = bool(self.balanceIQD > other.balanceIQD)
+        XUS = bool(self.balanceUSD > other.balanceUSD)
+        return XIQ, XUS
+
+    def __lt__(self, other):
+        XIQ = bool(self.balanceIQD < other.balanceIQD)
+        XUS = bool(self.balanceUSD < other.balanceUSD)
+        return XIQ, XUS
+
+    def other_than_gt_and_ls(self, other):
+        if self.balanceIQD > other.balanceIQD and self.balanceUSD < other.balanceUSD:
+            return True, False
+        else:
+            return False, True
+
+    def is_zero(self):
+        if self.balanceIQD == 0 and self.balanceUSD == 0:
+            return True
+        else:
+            return False
+
 
 
 class AccountTypeChoices(models.TextChoices):
