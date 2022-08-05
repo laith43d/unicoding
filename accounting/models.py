@@ -1,7 +1,7 @@
 from django.db import models
 from django.db.models import Sum
 from django.dispatch import receiver
-from django.db.models.signals import post_save
+from django.db.models.signals import post_save, pre_save
 from accounting.exceptions import AccountingEquationError
 from decimal import Decimal
 
@@ -71,10 +71,9 @@ class Balance:
         self.balanceIQD = balanceIQD
 
     def __add__(self, other):
-        print(self.balanceIQD)
+
         self.balanceIQD += other.balanceIQD
-        print(self.balanceIQD)
-        print(self.balanceUSD)
+
         self.balanceUSD += other.balanceUSD
         return [{
             'currency': 'USD',
@@ -83,6 +82,11 @@ class Balance:
             'currency': 'IQD',
             'sum': self.balanceIQD
         }]
+    def __lt__(self, other):
+        if self.balanceIQD <other.balanceIQD:
+            IQDS=True
+            print(IQDS)
+            return None
 
 
 class CurrencyChoices(models.TextChoices):
@@ -148,13 +152,13 @@ class Account(models.Model):
     #         self.refresh_from_db()
 
 
-# @receiver(post_save, sender=Account)
-# def add_code_and_full_code(sender, instance, **kwargs):
-#     instance.code = instance.id
-#     if instance.parent:
-#         instance.full_code = f'{instance.parent.full_code}{instance.id}'
-#     else:
-#         instance.full_code = f'{instance.id}'
+@receiver(pre_save, sender=Account)
+def add_code_and_full_code(sender, instance, **kwargs):
+    if instance.code:
+        instance.full_code = f'{instance.parent.full_code}{instance.id}'
+    else:
+        instance.code=Account.objects.last().id+1
+        instance.full_code = f'{instance.parent.full_code}{instance.code}'
 
 
 class Transaction(models.Model):
