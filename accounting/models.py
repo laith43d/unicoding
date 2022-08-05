@@ -1,11 +1,10 @@
 from django.db import models
 from django.db.models import Sum
-from django.dispatch import receiver
-from django.db.models.signals import post_save
+
 from accounting.exceptions import AccountingEquationError
-from decimal import Decimal
 
 '''
+
 Account
     - parent
     - type
@@ -24,6 +23,7 @@ JournalEntry
 
 * Accounts should support multiple currencies
 * Each Transaction should consist of two or more even numbered Journal Entries
+
 '''
 
 
@@ -48,24 +48,13 @@ class CurrencyChoices(models.TextChoices):
 
 class Balance:
     def __init__(self, balances):
-        try:
-            balance1 = balances[0]
-        except IndexError:
-            balance1 = {'currency': 'USD', 'sum': 0}
-        try:
-            balance2 = balances[1]
-        except IndexError:
-            if balance1['currency'] == 'USD':
-                balance2 = {'currency': 'IQD', 'sum': Decimal(0)}
-            else:
-                balance2 = {'currency': 'USD', 'sum': Decimal(0)}
-
-        if balance1['currency'] == 'USD':
-            balanceUSD = balance1['sum']
-            balanceIQD = balance2['sum']
-        else:
-            balanceIQD = balance1['sum']
-            balanceUSD = balance2['sum']
+        balanceIQD = 0
+        balanceUSD = 0
+        for i in balances:
+            if i['currency'] == 'USD':
+                balanceUSD = i['sum']
+            if i['currency'] == 'IQD':
+                balanceIQD = i['sum']
 
         self.balanceUSD = balanceUSD
         self.balanceIQD = balanceIQD
@@ -74,18 +63,27 @@ class Balance:
         self.balanceIQD += other.balanceIQD
         self.balanceUSD += other.balanceUSD
         return [{
-            'currency': 'USD',
-            'sum': self.balanceUSD
-        }, {
             'currency': 'IQD',
             'sum': self.balanceIQD
+        }, {
+            'currency': 'USD',
+            'sum': self.balanceUSD
         }]
 
-    def __radd__(self, other):
-        if other == 0:  #
-            return self
-        else:
-            return self.__add__(other)
+    def __gt__(self, other):
+        bIQD = self.balanceIQD > other.balanceIQD
+        bUSD = self.balanceUSD > other.balanceUSD
+        return bIQD, bUSD
+
+    def __lt__(self, other):
+        bIQD = self.balanceIQD < other.balanceIQD
+        bUSD = self.balanceUSD < other.balanceUSD
+        return bIQD, bUSD
+
+    def is_zero(self):
+        bIQD = True if self.balanceIQD == 0 else False
+        bUSD = True if self.balanceUSD == 0 else False
+        return bIQD, bUSD
 
 
 class Account(models.Model):
@@ -102,22 +100,17 @@ class Account(models.Model):
     def balance(self):
         return self.journal_entries.values('currency').annotate(sum=Sum('amount')).order_by()
 
-    def M_Balance(self):
-        M_child = self.children.all()
-        list_balances = []
-
-        if len(M_child) == 0:
-            return self.balance()
-
-        elif len(M_child) > 0:
-            if len(M_child) == 1:
-                return self.balance()
-            else:
-                for r in list(M_child):
-                    list_child = r.balance()
-                    obj = Balance(list_child)
-                    list_balances.append(obj)
-        return sum(list_balances)
+    @property
+    def parent_balances(self):
+        global total_balance
+        parent_children = self.children.all()
+        for account in parent_children:
+            balance_acc = Balance(account.balance())
+            children = self.children.all()
+            for child_obj in children:
+                balance_acc_obj = Balance(child_obj.balance())
+                total_balance = balance_acc_obj.__add__(balance_acc)
+            return total_balance
 
 class Transaction(models.Model):
     type = models.CharField(max_length=255, choices=TransactionTypeChoices.choices)
