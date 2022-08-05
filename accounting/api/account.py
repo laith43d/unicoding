@@ -57,8 +57,6 @@ def get_account_balances(request):
     return status.HTTP_200_OK, result
 
 
-
-
 class Balance:
     def __init__(self, balances):
         balance1 = balances[0]
@@ -84,4 +82,24 @@ class Balance:
             'currency': 'IQD',
             'sum': self.balanceIQD
         }]
+
+    def __sub__(self, other):
+        self.balanceIQD -= other.balanceIQD
+        self.balanceUSD -= other.balanceUSD
+        return [{
+            'currency': 'USD',
+            'sum': self.balanceUSD
+        }, {
+            'currency': 'IQD',
+            'sum': self.balanceIQD
+        }]
+
+    def __gt__(self, other):
+        return self.balanceUSD > other.balanceUSD, self.balanceIQD > other.balanceIQD
+
+    def __lt__(self, other):
+        return self.balanceUSD < other.balanceUSD, self.balanceIQD < other.balanceIQD
+
+    def is_zero(self):
+        return self.balanceUSD == 0 and self.balanceIQD == 0
 
