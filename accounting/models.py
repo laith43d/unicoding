@@ -161,6 +161,13 @@ class Balance:
         bUSD = bool(self.balanceUSD < other.balanceUSD)
         return bIQD, bUSD
 
+
+    def gt_and_ls(self, other):
+        if self.balanceIQD > other.balanceIQD & self.balanceUSD < other.balanceUSD:
+            return True, False
+        else:
+            return False, True
+
     def is_zero(self):
         if self.balanceIQD == 0 & self.balanceUSD == 0:
             return True
