@@ -1,8 +1,9 @@
 from django.db import models
 from django.db.models import Sum
 from django.dispatch import receiver
-from django.db.models.signals import post_save
+from django.db.models.signals import post_save, pre_save
 from accounting.exceptions import AccountingEquationError
+from decimal import Decimal
 
 '''
 
@@ -43,6 +44,51 @@ class TransactionTypeChoices(models.TextChoices):
     bill = 'bill', 'Bill'
 
 
+class Balance:
+
+    def __init__(self, balances):
+
+        try:
+            balance1 = balances[0]
+        except IndexError:
+            balance1 = {'currency': 'USD', 'sum': 0}
+        try:
+            balance2 = balances[1]
+        except IndexError:
+            if balance1['currency'] == 'USD':
+                balance2 = {'currency': 'IQD', 'sum': Decimal(0)}
+            else:
+                balance2 = {'currency': 'USD', 'sum': Decimal(0)}
+
+        if balance1['currency'] == 'USD':
+            balanceUSD = balance1['sum']
+            balanceIQD = balance2['sum']
+        else:
+            balanceIQD = balance1['sum']
+            balanceUSD = balance2['sum']
+
+        self.balanceUSD = balanceUSD
+        self.balanceIQD = balanceIQD
+
+    def __add__(self, other):
+
+        self.balanceIQD += other.balanceIQD
+
+        self.balanceUSD += other.balanceUSD
+        return [{
+            'currency': 'USD',
+            'sum': self.balanceUSD
+        }, {
+            'currency': 'IQD',
+            'sum': self.balanceIQD
+        }]
+    def __lt__(self, other):
+        if self.balanceIQD <other.balanceIQD:
+            IQDS=True
+            print(IQDS)
+            return None
+
+
 class CurrencyChoices(models.TextChoices):
     USD = 'USD', 'USD'
     IQD = 'IQD', 'IQD'
@@ -59,10 +105,36 @@ class Account(models.Model):
     def __str__(self):
         return f'{self.full_code} - {self.name}'
 
-    def balance(self):
+    def SimpleBalance(self):
         return self.journal_entries.values('currency').annotate(sum=Sum('amount')).order_by()
 
-    # def save(
+    def balance(self):
+        parent=False
+        balance = self.journal_entries.values('currency').annotate(sum=Sum('amount')).order_by()
+        parentList = Account.objects.filter(parent_id__isnull=False).values_list('parent_id', flat=True)
+        child_list = []
+        if self.id in parentList:
+            for w in list(Account.objects.values('full_code')):
+                var = str(w['full_code'])
+                if var.startswith(str(self.id)) and var != str(self.id):
+                    child_list.append(var)
+        parent_balance = Balance(self.SimpleBalance())
+        for c in child_list:
+            parent=True
+            child_account = Account.objects.get(full_code=c)
+            parent_balance = parent_balance + Balance(child_account.balance())
+            parent_balance = Balance(parent_balance)
+        if parent==True:
+            return [{
+            'currency': 'USD',
+            'sum': parent_balance.balanceUSD
+        }, {
+            'currency': 'IQD',
+            'sum': parent_balance.balanceIQD
+        }]
+        else:
+            return balance
+
     #         self, force_insert=False, force_update=False, using=None, update_fields=None
     # ):
     #     creating = not bool(self.id)
@@ -80,13 +152,13 @@ class Account(models.Model):
     #         self.refresh_from_db()
 
 
-# @receiver(post_save, sender=Account)
-# def add_code_and_full_code(sender, instance, **kwargs):
-#     instance.code = instance.id
-#     if instance.parent:
-#         instance.full_code = f'{instance.parent.full_code}{instance.id}'
-#     else:
-#         instance.full_code = f'{instance.id}'
+@receiver(pre_save, sender=Account)
+def add_code_and_full_code(sender, instance, **kwargs):
+    if instance.code:
+        instance.full_code = f'{instance.parent.full_code}{instance.id}'
+    else:
+        instance.code=Account.objects.last().id+1
+        instance.full_code = f'{instance.parent.full_code}{instance.code}'
 
 
 class Transaction(models.Model):
