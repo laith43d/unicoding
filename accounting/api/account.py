@@ -62,17 +62,14 @@ def get_account_balance(request, account_id: int):
 
     return HTTPStatus.OK, {'account': account.name, 'balance':final_balance}
 
-
-
 def get_balance(balances):
-    IQD_balance=0
-    USD_balance=0
-    for a in balances:
-        if a['currency'] == 'IQD':
-            IQD_balance += a['sum'] 
+    IQD_B=0
+    USD_B=0
+    for i in balances:
+        if i['currency'] == 'IQD':
+            IQD_B += i['sum'] 
         else:
-            USD_balance += a['sum']
+            USD_B += i['sum']
 
-    final_balance = [{'currency':'USD', 'sum':USD_balance},{'currency':'IQD', 'sum':IQD_balance}]
+    final_balance = [{'currency':'USD', 'sum':USD_B},{'currency':'IQD', 'sum':IQD_B}]
     return final_balance
-    
