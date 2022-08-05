@@ -13,7 +13,7 @@ account_router = Router(tags=['account'])
 
 @account_router.get("/get_all", response=List[AccountOut])
 def get_all(request):
-    return status.HTTP_200_OK, Account.objects.all()
+    return status.HTTP_200_OK, Account.objects.order_by('full_code')
 
 
 @account_router.get('/get_one/{account_id}/', response={
@@ -50,8 +50,9 @@ def get_account_balances(request):
     result = []
     for a in accounts:
         result.append({
-            'account': a.name, 'balance': list(a.Tbalance())
+            'account': a.name, 'balance': list(a.M_Balance())
         })
 
     return status.HTTP_200_OK, result
+
 

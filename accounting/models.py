@@ -1,10 +1,11 @@
 from django.db import models
 from django.db.models import Sum
-
+from django.dispatch import receiver
+from django.db.models.signals import post_save
 from accounting.exceptions import AccountingEquationError
+from decimal import Decimal
 
 '''
-
 Account
     - parent
     - type
@@ -15,7 +16,6 @@ Account
 Transaction
     - type
     - description
-    
 JournalEntry
     - account
     - transaction
@@ -24,39 +24,7 @@ JournalEntry
 
 * Accounts should support multiple currencies
 * Each Transaction should consist of two or more even numbered Journal Entries
-
 '''
-
-
-class Balance:
-
-    def __init__(self, balances):
-        balanceIQD = 0
-        balanceUSD = 0
-        for i in balances:
-            if i['currency'] == 'USD':
-                balanceUSD = i['sum']
-            if i['currency'] == 'IQD':
-                balanceIQD = i['sum']
-        self.balanceUSD = balanceUSD
-        self.balanceIQD = balanceIQD
-
-    def __add__(self, other):
-        self.balanceIQD += other.balanceIQD
-        self.balanceUSD += other.balanceUSD
-        return [{
-            'currency': 'USD',
-            'sum': self.balanceUSD
-        }, {
-            'currency': 'IQD',
-            'sum': self.balanceIQD
-        }]
-
-    def __radd__(self, other):
-        if other == 0:
-            return self
-        else:
-            return self.__add__(other)
 
 
 class AccountTypeChoices(models.TextChoices):
@@ -78,9 +46,50 @@ class CurrencyChoices(models.TextChoices):
     IQD = 'IQD', 'IQD'
 
 
+class Balance:
+    def __init__(self, balances):
+        try:
+            balance1 = balances[0]
+        except IndexError:
+            balance1 = {'currency': 'USD', 'sum': 0}
+        try:
+            balance2 = balances[1]
+        except IndexError:
+            if balance1['currency'] == 'USD':
+                balance2 = {'currency': 'IQD', 'sum': Decimal(0)}
+            else:
+                balance2 = {'currency': 'USD', 'sum': Decimal(0)}
+
+        if balance1['currency'] == 'USD':
+            balanceUSD = balance1['sum']
+            balanceIQD = balance2['sum']
+        else:
+            balanceIQD = balance1['sum']
+            balanceUSD = balance2['sum']
+
+        self.balanceUSD = balanceUSD
+        self.balanceIQD = balanceIQD
+
+    def __add__(self, other):
+        self.balanceIQD += other.balanceIQD
+        self.balanceUSD += other.balanceUSD
+        return [{
+            'currency': 'USD',
+            'sum': self.balanceUSD
+        }, {
+            'currency': 'IQD',
+            'sum': self.balanceIQD
+        }]
+
+    def __radd__(self, other):
+        if other == 0:  #
+            return self
+        else:
+            return self.__add__(other)
+
+
 class Account(models.Model):
-    parent = models.ForeignKey('self', null=True, blank=True, on_delete=models.SET_NULL,
-                               related_name='account_children')
+    parent = models.ForeignKey('self', null=True, blank=True, on_delete=models.SET_NULL, related_name='children')
     type = models.CharField(max_length=255, choices=AccountTypeChoices.choices)
     name = models.CharField(max_length=255)
     code = models.CharField(max_length=20, null=True, blank=True)
@@ -93,23 +102,22 @@ class Account(models.Model):
     def balance(self):
         return self.journal_entries.values('currency').annotate(sum=Sum('amount')).order_by()
 
-    def total_balance(self):
+    def M_Balance(self):
+        M_child = self.children.all()
+        list_balances = []
 
-        if self.parent is not None:
+        if len(M_child) == 0:
             return self.balance()
-        else:
-            children = self.account_children.all()
-            if len(children) == 1:
-                return self.balance()
-            elif len(children) == 0:
+
+        elif len(M_child) > 0:
+            if len(M_child) == 1:
                 return self.balance()
             else:
-                Total_balance = []
-            for childrens in list(children):
-                child_Balance = childrens.total_balance()
-                Total_balance.append(Balance(child_Balance))
-
-            return sum(Total_balance)
+                for r in list(M_child):
+                    list_child = r.balance()
+                    obj = Balance(list_child)
+                    list_balances.append(obj)
+        return sum(list_balances)
 
 class Transaction(models.Model):
     type = models.CharField(max_length=255, choices=TransactionTypeChoices.choices)
