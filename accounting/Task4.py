@@ -1,3 +1,4 @@
+
 class Balance:
     def __init__(self, balances):
         balance1 = balances[0]
@@ -78,4 +79,3 @@ result3 = Obj1.is_zero()
 print(result3)
 result4 = Obj2.is_zero()
 print(result4)
-
