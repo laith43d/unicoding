@@ -1,4 +1,4 @@
-
+#task 4 
 class Balance:
 
     def __init__(self, balances):
@@ -26,20 +26,27 @@ class Balance:
             'currency': 'IQD',
             'sum': self.balanceIQD
         }]
-#task 4 
-        def currency(self,other):
+        def __zero__(self,other):
             IQD=True
             USD=True
             if  self.balanceIQD ==0 and self.balanceUSD == 0:
                 IQD=False
                 USD=False
-            else:
-                if self.balanceIQD>other.balanceIQD :
-                    IQD=True
-                elif self.balanceIQD<other.balanceIQD:
-                    IQD=False
-                if self.balanceUSD>other.balanceUSD:
-                    USD=True
-                elif self.balanceUSD<other.balanceUSD:
-                    USD=False
             return{'IQD':IQD,'USD':USD}
+        def __grater__():
+            IQD=False
+            USD=False
+            if self.balanceIQD>other.balanceIQD :
+                IQD=True
+            if self.balanceUSD>other.balanceUSD:
+                USD=True
+            return{'IQD':IQD,'USD':USD}
+        def __smaller__():
+            IQD=False
+            USD=False
+            if self.balanceIQD<other.balanceIQD :
+                IQD=True
+            if self.balanceUSD<other.balanceUSD:
+                USD=True
+            return{'IQD':IQD,'USD':USD}
+            
