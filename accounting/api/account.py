@@ -83,3 +83,23 @@ class Balance:
             'sum': self.balanceIQD
         }]
 
+    def __sub__(self, other):
+        self.balanceIQD -= other.balanceIQD
+        self.balanceUSD -= other.balanceUSD
+        return [{
+            'currency': 'USD',
+            'sum': self.balanceUSD
+        }, {
+            'currency': 'IQD',
+            'sum': self.balanceIQD
+        }]
+
+    def __gt__(self, other):
+        return self.balanceUSD > other.balanceUSD, self.balanceIQD > other.balanceIQD
+
+    def __lt__(self, other):
+        return self.balanceUSD < other.balanceUSD, self.balanceIQD < other.balanceIQD
+
+    def is_zero(self):
+        return self.balanceUSD == 0 and self.balanceIQD == 0
+
