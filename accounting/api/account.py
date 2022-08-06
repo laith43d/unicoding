@@ -92,3 +92,15 @@ class Balance:
             'currency': 'IQD',
             'sum': self.balanceIQD
         }]
+        
+        
+    def __gt__(self,other):
+        return(self.balanceIQD > other.balanceIQD , self.balanceUSD > other.balanceUSD)
+        
+        
+    def __ls__(self,other):
+        return(self.balanceIQD < other.balanceIQD , self.balanceUSD < other.balanceUSD)
+        
+        
+    def is_zero(self):
+        return(self.balanceIQD == 0 and self.balanceUSD == 0)
