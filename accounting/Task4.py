@@ -56,8 +56,8 @@ balance2 = Balance([
                   ]) 
 
 
-print("{:25}{}".format("balance1 > balance2 => ", balance1 > balance2))
-print("{:25}{}".format("balance1 < balance2 => ", balance1 < balance2))
-print("{:20}{:5}{}".format("balance1 == 0","=>", balance1.is_zero()))
-print("{:25}{}".format("balance1 + balance2 => ", balance1 + balance2))
+# print("{:25}{}".format("balance1 > balance2 => ", balance1 > balance2))
+# print("{:25}{}".format("balance1 < balance2 => ", balance1 < balance2))
+# print("{:20}{:5}{}".format("balance1 == 0","=>", balance1.is_zero()))
+# print("{:25}{}".format("balance1 + balance2 => ", balance1 + balance2))
 
