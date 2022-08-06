@@ -6,17 +6,11 @@ from accounting.schemas import AccountOut, FourOFourOut, GeneralLedgerOut
 from typing import List
 from django.db.models import Sum, Avg
 from rest_framework import status
-
 from restauth.authorization import AuthBearer
-
 account_router = Router(tags=['account'])
-
-
 @account_router.get("/get_all", response=List[AccountOut])
 def get_all(request):
     return status.HTTP_200_OK, Account.objects.order_by('full_code')
-
-
 @account_router.get('/get_one/{account_id}/', response={
     200: AccountOut,
     404: FourOFourOut,
@@ -27,18 +21,23 @@ def get_one(request, account_id: int):
         return account
     except Account.DoesNotExist:
         return 404, {'detail': f'Account with id {account_id} does not exist'}
+        return status.HTTP_404_NOT_FOUND, {'detail': f'Account with id {account_id} does not exist'}
 
 
 @account_router.get('/get_account_types/')
 def get_account_types(request):
     return {t[0]: t[1] for t in AccountTypeChoices.choices}
 
-
 @account_router.get('/account-balance/{account_id}', response=GeneralLedgerOut)
 def get_account_balance(request, account_id: int):
+    global balance, balanceUSD
     account = get_object_or_404(Account, id=account_id)
 
     balance = account.balance()
+    if account.parent != None:
+        balance = account.balance()
+    else:
+        balance=account.parent_balances
 
     journal_entries = account.journal_entries.all()
 
@@ -53,7 +52,6 @@ def get_account_balances(request):
         result.append({
             'account': a.name, 'balance': list(a.balance())
         })
-
     return status.HTTP_200_OK, result
 
 
@@ -84,4 +82,3 @@ class Balance:
             'currency': 'IQD',
             'sum': self.balanceIQD
         }]
-
