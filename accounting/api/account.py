@@ -93,7 +93,6 @@ def get_account_balances(request):
 
 
 
-
 class Balance:
     def __init__(self, balances):
         if len(balances) == 2:
@@ -123,6 +122,15 @@ class Balance:
         else:
             self.balanceUSD = 0
             self.balanceIQD = 0
+    
+    def __init__(self, amount1, currency1, amount2, currency2):
+        if currency1 == 'USD':
+            self.balanceUSD = amount1
+            self.balanceIQD = amount2
+        elif currency1 == 'IQD':
+            self.balanceUSD = amount2
+            self.balanceIQD = amount1
+            
 
     def __add__(self, other):
         self.balanceIQD += other.balanceIQD
@@ -134,3 +142,19 @@ class Balance:
             'currency': 'IQD',
             'sum': self.balanceIQD
         }]
+    
+    def __lt__(self, other):
+        iqd = self.balanceIQD < other.balanceIQD
+        usd = self.balanceUSD < other.balanceUSD
+        return(f'({usd},{iqd})')
+        
+    def __gt__(self, other):
+        iqd = self.balanceIQD > other.balanceIQD
+        usd = self.balanceUSD > other.balanceUSD
+        return(f'({usd},{iqd})')
+    
+    def isZero(self):
+        if self.balanceIQD == 0 and self.balanceUSD == 0:
+            return True
+        else:
+            return False
