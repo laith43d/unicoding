@@ -1,12 +1,12 @@
+from django.db.models import Sum, Avg
+from django.shortcuts import get_object_or_404
 from ninja import Router
 from ninja.security import django_auth
-from django.shortcuts import get_object_or_404
+from rest_framework import status
+from typing import List
+
 from accounting.models import Account, AccountTypeChoices
 from accounting.schemas import AccountOut, FourOFourOut, GeneralLedgerOut
-from typing import List
-from django.db.models import Sum, Avg
-from rest_framework import status
-
 from restauth.authorization import AuthBearer
 
 account_router = Router(tags=['account'])
@@ -37,8 +37,10 @@ def get_account_types(request):
 @account_router.get('/account-balance/{account_id}', response=GeneralLedgerOut)
 def get_account_balance(request, account_id: int):
     account = get_object_or_404(Account, id=account_id)
-
-    balance = account.balance()
+    if account.parent is not None:
+        balance = account.balance
+    else:
+        balance = account.total_balance
 
     journal_entries = account.journal_entries.all()
 
@@ -51,37 +53,7 @@ def get_account_balances(request):
     result = []
     for a in accounts:
         result.append({
-            'account': a.name, 'balance': list(a.balance())
+            'account': a.name, 'balance': list(a.total_balance)
         })
 
     return status.HTTP_200_OK, result
-
-
-
-
-class Balance:
-    def __init__(self, balances):
-        balance1 = balances[0]
-        balance2 = balances[1]
-
-        if balance1['currency'] == 'USD':
-            balanceUSD = balance1['sum']
-            balanceIQD = balance2['sum']
-        else:
-            balanceIQD = balance1['sum']
-            balanceUSD = balance2['sum']
-
-        self.balanceUSD = balanceUSD
-        self.balanceIQD = balanceIQD
-
-    def __add__(self, other):
-        self.balanceIQD += other.balanceIQD
-        self.balanceUSD += other.balanceUSD
-        return [{
-            'currency': 'USD',
-            'sum': self.balanceUSD
-        }, {
-            'currency': 'IQD',
-            'sum': self.balanceIQD
-        }]
-

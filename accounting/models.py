@@ -1,8 +1,10 @@
 from django.db import models
 from django.db.models import Sum
-from django.dispatch import receiver
 from django.db.models.signals import post_save
+from django.dispatch import receiver
+
 from accounting.exceptions import AccountingEquationError
+from accounting.utils import Balance, zero_balances
 
 '''
 
@@ -49,7 +51,7 @@ class CurrencyChoices(models.TextChoices):
 
 
 class Account(models.Model):
-    parent = models.ForeignKey('self', null=True, blank=True, on_delete=models.SET_NULL)
+    parent = models.ForeignKey('self', null=True, blank=True, on_delete=models.SET_NULL, related_name='children')
     type = models.CharField(max_length=255, choices=AccountTypeChoices.choices)
     name = models.CharField(max_length=255)
     code = models.CharField(max_length=20, null=True, blank=True)
@@ -59,34 +61,38 @@ class Account(models.Model):
     def __str__(self):
         return f'{self.full_code} - {self.name}'
 
+    @property
     def balance(self):
-        return self.journal_entries.values('currency').annotate(sum=Sum('amount')).order_by()
+        """
+        This property is to get a balance for an account that has no parent in common.
+        We can use it for parents with a single child since we don't need to sum more than one child,
+        so calculate all the JEs we have.
+        """
+        result = self.journal_entries.values('currency').annotate(sum=Sum('amount')).order_by()
+        if not result:
+            # When there is no result, this means the account has no balances.
+            return zero_balances()
+        return result
 
-    # def save(
-    #         self, force_insert=False, force_update=False, using=None, update_fields=None
-    # ):
-    #     creating = not bool(self.id)
-    #
-    #     if creating:
-    #         self.code = self.id
-    #         try:
-    #             self.full_code = f'{self.parent.full_code}{self.id}'
-    #         except AttributeError:
-    #             self.full_code = self.id
-    #
-    #     super(Account, self).save()
-    #
-    #     if creating:
-    #         self.refresh_from_db()
+    @property
+    def total_balance(self):
+        """
+        This property is to get a balance for accounts with multiple children,
+        so we get the parent balance by simple sum operation for all children we have.
+        """
+        children = self.children.all()
+        if len(children) <= 1:
+            # If the parent has one child or less, we use balance property, as we said previously.
+            return self.balance
 
+        # When the parent has multi children, get the sum of all child balances.
+        objects = []
+        for child in list(children):
+            child_balance = child.balance
+            obj = Balance(child_balance)
+            objects.append(obj)
 
-# @receiver(post_save, sender=Account)
-# def add_code_and_full_code(sender, instance, **kwargs):
-#     instance.code = instance.id
-#     if instance.parent:
-#         instance.full_code = f'{instance.parent.full_code}{instance.id}'
-#     else:
-#         instance.full_code = f'{instance.id}'
+        return sum(objects)
 
 
 class Transaction(models.Model):
