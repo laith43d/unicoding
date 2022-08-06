@@ -105,6 +105,24 @@ class Balance:
           return self
         else:
           return self.__add__(other)
+       
+       def _greater_(self,other):
+           if( self.balanceIQD > other.balanceIQD):
+            return True
+           else:
+            return False 
+        
+       def _les_(self , other):
+           if( self.balanceIQD > other.balanceIQD):
+            return True 
+           else:
+            return False
+        
+       def _zero_(self , other):   
+           if( self.balanceIQD == 0 and  other.balanceIQD == 0 ):
+            return True
+           else:
+            return False
 
     # def save(
     #         self, force_insert=False, force_update=False, using=None, update_fields=None
