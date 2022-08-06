@@ -2,13 +2,13 @@ from decimal import Decimal
 
 from django.db import models
 from django.db.models import Sum
-from django.dispatch import receiver
-from django.db.models.signals import post_save
+
 from accounting.exceptions import AccountingEquationError
 
 '''
 
 Account
+
     - parent
     - type
     - name
@@ -91,14 +91,30 @@ class Balance:
         }]
 
     def __radd__(self, other):
-        if other == 0:
+        if other == 0:  #
             return self
         else:
             return self.__add__(other)
 
+    def is_zero(self):
+        if self.balanceUSD == 0 and self.balanceIQD == 0:
+            return True
+        else:
+            return False
+
+    def __gt__(self, other):
+        balanceUSD = self.balanceUSD > other.balanceUSD
+        balanceIQD = self.balanceIQD > other.balanceIQD
+        return balanceUSD, balanceIQD
+
+    def __lt__(self, other):
+        balanceUSD = self.balanceUSD < other.balanceUSD
+        balanceIQD = self.balanceIQD < other.balanceIQD
+        return balanceUSD, balanceIQD
+
 
 class Account(models.Model):
-    parent = models.ForeignKey('self', null=True, blank=True, on_delete=models.SET_NULL,related_name='children')
+    parent = models.ForeignKey('self', null=True, blank=True, on_delete=models.SET_NULL, related_name='children')
     type = models.CharField(max_length=255, choices=AccountTypeChoices.choices)
     name = models.CharField(max_length=255)
     code = models.CharField(max_length=20, null=True, blank=True)
@@ -109,7 +125,8 @@ class Account(models.Model):
         return f'{self.full_code} - {self.name}'
 
     def balance(self):
-        return self.journal_entries.values('currency').annotate(sum=Sum('amount')).order_by()
+
+        self.journal_entries.values('currency').annotate(sum=Sum('amount')).order_by()
 
     def total_balance(self):
         children = self.children.all()  # Get all children
