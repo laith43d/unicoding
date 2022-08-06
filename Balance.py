@@ -2,10 +2,13 @@ class Balance:
           def __init__(self, amount1=None,cur1=None,amount2=None,cur2=None):
                     if amount1==None:
                               amount1=0
-                              cur1=''
-                    if amount2==None:
+                              cur1='USD'
+                    if amount2==None and cur1=='USD':
                               amount2=0
-                              cur2=''
+                              cur2='IQD'
+                    elif amount2==None and cur1=='IQD':
+                              amount2=0
+                              cur2='USD'
                     self.amount1 = amount1
                     self.amount2 = amount2
                     self.cur1=cur1
@@ -44,7 +47,7 @@ class Balance:
                     return f'({a} , {b})'
 
 
-a=Balance(200,'USD',1000,'IQD')
+a=Balance(200,'USD')
 b=Balance(200,'USD',2000,'IQD')
 print(a == b)
 print(a < b)
