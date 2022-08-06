@@ -2,15 +2,14 @@ from django.contrib import admin
 
 # Register your models here.
 from accounting.models import Account, Transaction, JournalEntry
+from mptt.admin import MPTTModelAdmin 
 
-
-@admin.register(Account)
-class AccountAdmin(admin.ModelAdmin):
+class AccountAdmin(MPTTModelAdmin):
     list_display = ['name', 'parent', 'type', 'code', 'full_code']
     search_fields = ['name', 'code', 'full_code']
     list_filter = ['type']
-    ordering = ['full_code']
 
 
+admin.site.register(Account,AccountAdmin) 
 admin.site.register(Transaction)
 admin.site.register(JournalEntry)

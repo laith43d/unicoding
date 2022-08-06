@@ -1,5 +1,5 @@
 from decimal import Decimal
-from typing import List
+from typing import List, Optional
 
 from ninja import Schema
 
@@ -70,6 +70,10 @@ class CurrencyBalance(Schema):
 
 
 class GeneralLedgerOut(Schema):
+    parent_id : Optional[int]
     account: str
     balance: List[CurrencyBalance]
-    # jes: List[JournalEntryOut]
+
+class GeneralLedgerOutBalances(GeneralLedgerOut):
+    id :int
+ 
