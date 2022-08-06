@@ -45,18 +45,36 @@ def get_account_balance(request, account_id: int):
     return 200, {'account': account.name, 'balance': list(balance), 'jes': list(journal_entries)}
 
 
-@account_router.get('/account-balances/', response=List[GeneralLedgerOut])
-def get_account_balances(request):
-    accounts = Account.objects.all()
-    result = []
-    for a in accounts:
-        result.append({
-            'account': a.name, 'balance': list(a.balance())
-        })
-
-    return status.HTTP_200_OK, result
 
 
+@account_router.get('/account-balances/')
+def get_account_balances(request,account_id:int):
+    account=Account.objects.get(id=account_id)
+    final=Acc_bal(account)
+    return status.HTTP_200_OK,{'account':account.name ,'balance':final}
+
+def Acc_bal(account):
+    
+    children=account.children.all()
+    child_bal=[]
+    bal=[] 
+    acc_bal=account.balance()
+    # if children.count() == 0:
+    #          return account.balance()
+    for child in children:
+            child_bal.append(list(child.balance()))
+    for a in list(acc_bal):
+        bal.append(a)
+
+    for a in child_bal:
+        for b in a:
+            bal.append(b)
+    if account.parent == None:
+        total= Balance(bal)
+    else:
+        total= list(acc_bal)
+    
+    return total
 
 
 class Balance:
