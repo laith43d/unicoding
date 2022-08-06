@@ -1,4 +1,5 @@
 from decimal import Decimal
+from re import T
 from typing import List
 
 from ninja import Schema
@@ -62,7 +63,7 @@ class TransactionIn(Schema):
     type: str
     description: str
     je: JournalEntryInTransaction
-
+    
 
 class CurrencyBalance(Schema):
     currency: str
@@ -72,4 +73,4 @@ class CurrencyBalance(Schema):
 class GeneralLedgerOut(Schema):
     account: str
     balance: List[CurrencyBalance]
-    # jes: List[JournalEntryOut]
+    #jes: list[JournalEntryOut]

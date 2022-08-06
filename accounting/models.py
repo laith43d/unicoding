@@ -49,7 +49,7 @@ class CurrencyChoices(models.TextChoices):
 
 
 class Account(models.Model):
-    parent = models.ForeignKey('self', null=True, blank=True, on_delete=models.SET_NULL)
+    parent = models.ForeignKey('self', null=True, blank=True, on_delete=models.SET_NULL, related_name= 'children')
     type = models.CharField(max_length=255, choices=AccountTypeChoices.choices)
     name = models.CharField(max_length=255)
     code = models.CharField(max_length=20, null=True, blank=True)
@@ -60,7 +60,9 @@ class Account(models.Model):
         return f'{self.full_code} - {self.name}'
 
     def balance(self):
+
         return self.journal_entries.values('currency').annotate(sum=Sum('amount')).order_by()
+
 
     # def save(
     #         self, force_insert=False, force_update=False, using=None, update_fields=None
