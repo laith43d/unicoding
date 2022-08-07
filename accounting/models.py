@@ -58,6 +58,40 @@ class Balance:
             return self
         else:
             return self.__add__(other)
+        
+            #TASK4 function1
+    def __greatThan__ (self, other):
+        if self.balanceIQD > other.balanceIQD:
+            IQD = True
+        else:
+            IQD = False
+        if self.balanceUSD > other.balanceUSD:
+            USD = True
+        else:
+            USD = False
+        return {'IQD': IQD, 'USD': USD}
+
+             #function2
+    def __lessThan__ (self, other):
+        if self.balanceIQD < other.balanceIQD:
+            IQD = True
+        else:
+            IQD = False
+        if self.balanceUSD < other.balanceUSD:
+            USD = True
+        else:
+            USD = False
+        return {'IQD': IQD, 'USD': USD}   
+    
+    
+    #function3
+    def __iszero__(self):
+
+        if self.balanceIQD == 0 and self.balanceUSD==0:
+            return True
+        else:
+            return False     
+    
 
 class AccountTypeChoices(models.TextChoices):
     ASSETS = 'ASSETS', 'Assets'
