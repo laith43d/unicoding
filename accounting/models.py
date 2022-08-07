@@ -47,7 +47,45 @@ class CurrencyChoices(models.TextChoices):
     USD = 'USD', 'USD'
     IQD = 'IQD', 'IQD'
 
+class Balance:
+    def __init__(self, balances):
+        balanceIQD = 0
+        balanceUSD = 0
+        for i in balances:
+            if i['currency'] == 'USD':
+                balanceUSD = i['sum']
+            if i['currency'] == 'IQD':
+                balanceIQD = i['sum']
 
+        self.balanceUSD = balanceUSD
+        self.balanceIQD = balanceIQD
+
+    def __add__(self, other):
+        self.balanceIQD += other.balanceIQD
+        self.balanceUSD += other.balanceUSD
+        return [{
+            'currency': 'IQD',
+            'sum': self.balanceIQD
+        }, {
+            'currency': 'USD',
+            'sum': self.balanceUSD
+        }]
+
+    def __gt__(self, other):
+        bIQD = self.balanceIQD > other.balanceIQD
+        bUSD = self.balanceUSD > other.balanceUSD
+        return bIQD, bUSD
+
+    def __lt__(self, other):
+        bIQD = self.balanceIQD < other.balanceIQD
+        bUSD = self.balanceUSD < other.balanceUSD
+        return bIQD, bUSD
+
+    def is_zero(self):
+        bIQD = True if self.balanceIQD == 0 else False
+        bUSD = True if self.balanceUSD == 0 else False
+        return bIQD, bUSD
+    
 class Account(models.Model):
     parent = models.ForeignKey('self', null=True, blank=True, on_delete=models.SET_NULL)
     type = models.CharField(max_length=255, choices=AccountTypeChoices.choices)
