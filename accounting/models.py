@@ -97,6 +97,17 @@ class Balance:
             'currency': 'IQD',
             'sum': self.balanceIQD
         }]
+    def gt_or_lt(self, other):
+        if self.balanceUSD > other.balanceUSD & self.balanceIQD < other.balanceIQD:
+            return True, False
+        else:
+            return False, True
+
+    def is_zero(self):
+        if self.balanceUSD == 0 & self.balanceIQD == 0:
+            return True
+        else:
+            return False
     def __radd__(self,other): #Add reversal method
         if other == 0:
             return self
