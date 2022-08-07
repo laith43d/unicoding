@@ -3,7 +3,7 @@ from ninja import Router
 
 from accounting.schemas import FourOFourOut
 from config import status
-from .authorization import create_token_for_user
+#from .authorization import create_token_for_user
 from .schemas import AccountIn, AuthOut, SigninIn
 
 auth_router = Router(tags=['auth'])

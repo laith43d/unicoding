@@ -1,6 +1,6 @@
 from django.contrib.auth import get_user_model
 from ninja.security import HttpBearer
-from jose import jwt, JWTError
+#from jose import jwt, JWTError
 
 from config import settings
 
@@ -9,7 +9,7 @@ User = get_user_model()
 
 # eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6InVzZXJAZXhhbXBsZS5jb20ifQ.X9-RqWLql-9n6NrkFVjXETHv2BRcVBaCXiQmXK3Nwws
 
-class AuthBearer(HttpBearer):
+'''class AuthBearer(HttpBearer):
     def authenticate(self, request, token):
         try:
             user_email = jwt.decode(token=token, key=settings.SECRET_KEY, algorithms='HS256')
@@ -25,3 +25,4 @@ def create_token_for_user(user):
     return {
         'access': str(token)
     }
+'''
