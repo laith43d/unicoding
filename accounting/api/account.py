@@ -1,5 +1,4 @@
 from ninja import Router
-from ninja.security import django_auth
 from django.shortcuts import get_object_or_404
 from accounting.models import Account, AccountTypeChoices
 from accounting.schemas import AccountOut, FourOFourOut, GeneralLedgerOut
