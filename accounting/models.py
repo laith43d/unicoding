@@ -74,6 +74,25 @@ class Balance:
         else:
             return self.__add__(other)
 
+    def __gt__(self, other):
+        obj_balance1 = self.balanceUSD > other.balanceIQD
+        obj_balance2 = self.balanceIQD > other.balanceUSD
+        return obj_balance1, obj_balance2
+
+    def __lt__(self, other):
+        obj_balance1 = self.balanceUSD < other.balanceUSD
+        obj_balance2 = self.balanceIQD < other.balanceIQD
+        return obj_balance1, obj_balance2
+
+    def e_t_z(self):
+        if self.balanceUSD == 0 and self.balanceIQD == 0:
+            return True
+        else:
+            return False
+
+
+
+
 
 
 class AccountTypeChoices(models.TextChoices):
