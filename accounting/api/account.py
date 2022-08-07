@@ -1,7 +1,7 @@
 from ninja import Router
 from ninja.security import django_auth
 from django.shortcuts import get_object_or_404
-from accounting.models import Account, AccountTypeChoices
+from accounting.models import Account, AccountTypeChoices,Balance
 from accounting.schemas import AccountOut, FourOFourOut, GeneralLedgerOut
 from typing import List
 from django.db.models import Sum, Avg
@@ -56,32 +56,26 @@ def get_account_balances(request):
 
     return status.HTTP_200_OK, result
 
+@account_router.get('/total_balance/', response=List[GeneralLedgerOut])
+def get_total_balance(request, account_id: int):
+
+    account = Account.objects.get(id=account_id)
+    children = account.children.all()
+    balances = []
+    if  account.children.all() == []: 
+        total_balance = account.balance()
+
+    else:
+        parent_balance = account.balance()
+
+        for child in children:
+            balances = [child.balance()]
+
+            balance1 = balances[0]
+            balance2 = balances[1]
 
 
+        total_balance =  Balance(parent_balance) + Balance(balance1) + Balance(balance2)
 
-class Balance:
-    def __init__(self, balances):
-        balance1 = balances[0]
-        balance2 = balances[1]
 
-        if balance1['currency'] == 'USD':
-            balanceUSD = balance1['sum']
-            balanceIQD = balance2['sum']
-        else:
-            balanceIQD = balance1['sum']
-            balanceUSD = balance2['sum']
-
-        self.balanceUSD = balanceUSD
-        self.balanceIQD = balanceIQD
-
-    def __add__(self, other):
-        self.balanceIQD += other.balanceIQD
-        self.balanceUSD += other.balanceUSD
-        return [{
-            'currency': 'USD',
-            'sum': self.balanceUSD
-        }, {
-            'currency': 'IQD',
-            'sum': self.balanceIQD
-        }]
-
+    return total_balance
