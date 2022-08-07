@@ -1,12 +1,14 @@
+from decimal import Decimal
+
 from django.db import models
 from django.db.models import Sum
-from django.dispatch import receiver
-from django.db.models.signals import post_save
+
 from accounting.exceptions import AccountingEquationError
 
 '''
 
 Account
+
     - parent
     - type
     - name
@@ -48,8 +50,71 @@ class CurrencyChoices(models.TextChoices):
     IQD = 'IQD', 'IQD'
 
 
+class Balance:
+
+    def __init__(self, balances):
+
+        try:
+            balance1 = balances[0]
+        except IndexError:
+            balance1 = {'currency': 'USD', 'sum': 0}
+        try:
+            balance2 = balances[1]
+        except IndexError:
+            if balance1['currency'] == 'USD':
+                balance2 = {'currency': 'IQD', 'sum': Decimal(0)}
+            else:
+                balance2 = {'currency': 'USD', 'sum': Decimal(0)}
+
+        if balance1['currency'] == 'USD':
+            balanceUSD = balance1['sum']
+            balanceIQD = balance2['sum']
+        else:
+            balanceIQD = balance1['sum']
+            balanceUSD = balance2['sum']
+
+        self.balanceUSD = balanceUSD
+        self.balanceIQD = balanceIQD
+
+    def __add__(self, other):
+        print(self.balanceIQD)
+        self.balanceIQD += other.balanceIQD
+        print(self.balanceIQD)
+        print(self.balanceUSD)
+        self.balanceUSD += other.balanceUSD
+        return [{
+            'currency': 'USD',
+            'sum': self.balanceUSD
+        }, {
+            'currency': 'IQD',
+            'sum': self.balanceIQD
+        }]
+
+    def __radd__(self, other):
+        if other == 0:  #
+            return self
+        else:
+            return self.__add__(other)
+
+    def is_zero(self):
+        if self.balanceUSD == 0 and self.balanceIQD == 0:
+            return True
+        else:
+            return False
+
+    def __gt__(self, other):
+        balanceUSD = self.balanceUSD > other.balanceUSD
+        balanceIQD = self.balanceIQD > other.balanceIQD
+        return balanceUSD, balanceIQD
+
+    def __lt__(self, other):
+        balanceUSD = self.balanceUSD < other.balanceUSD
+        balanceIQD = self.balanceIQD < other.balanceIQD
+        return balanceUSD, balanceIQD
+
+
 class Account(models.Model):
-    parent = models.ForeignKey('self', null=True, blank=True, on_delete=models.SET_NULL)
+    parent = models.ForeignKey('self', null=True, blank=True, on_delete=models.SET_NULL, related_name='children')
     type = models.CharField(max_length=255, choices=AccountTypeChoices.choices)
     name = models.CharField(max_length=255)
     code = models.CharField(max_length=20, null=True, blank=True)
@@ -60,7 +125,28 @@ class Account(models.Model):
         return f'{self.full_code} - {self.name}'
 
     def balance(self):
-        return self.journal_entries.values('currency').annotate(sum=Sum('amount')).order_by()
+
+        self.journal_entries.values('currency').annotate(sum=Sum('amount')).order_by()
+
+    def total_balance(self):
+        children = self.children.all()  # Get all children
+        list_balances = []  # Create a list to store balances
+
+        if len(children) == 0:  # If there are no children, return the balance of the account
+            return self.balance()
+
+        elif len(children) > 0:  # If there are children, return the balance of the account plus the balance of the
+            # children
+            if len(children) == 1:  # If there is only one child, return the balance of the child plus the balance of
+                # the account
+                return self.balance()
+            else:  # If there are more than one child, return the balance of the child plus the balance of the child
+                # plus the balance of the child
+                for child in list(children):  # For each child, add the balance of the child to the list
+                    children_balances = child.balance()  # Get the balance of the child
+                    obj = Balance(children_balances)  # Create a Balance object from the balance of the child
+                    list_balances.append(obj)  # Add the Balance object to the list
+        return sum(list_balances)  # Return the sum of all the balances in the list
 
     # def save(
     #         self, force_insert=False, force_update=False, using=None, update_fields=None
