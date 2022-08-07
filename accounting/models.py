@@ -88,6 +88,28 @@ class Balance:
         else:
             return self.__add__(other)
 
+    def __gt__(self, other):
+        return self.balanceUSD > other.balanceUSD, self.balanceIQD > other.balanceIQD
+
+    def __lt__(self, other):
+        return self.balanceUSD < other.balanceUSD, self.balanceIQD < other.balanceIQD
+
+    def is_zero(self):
+        if self.balanceUSD == 0 and self.balanceIQD == 0:
+            return True
+        else:
+            return False
+
+
+
+
+
+
+
+
+
+
+
 
 
 class Account(models.Model):
