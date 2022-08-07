@@ -1,7 +1,7 @@
 from ninja import Router
 from ninja.security import django_auth
 from django.shortcuts import get_object_or_404
-from accounting.models import Account, AccountTypeChoices
+from accounting.models import Account, AccountTypeChoices , JournalEntry
 from accounting.schemas import AccountOut, FourOFourOut, GeneralLedgerOut
 from typing import List
 from django.db.models import Sum, Avg
@@ -51,7 +51,7 @@ def get_account_balances(request):
     result = []
     for a in accounts:
         result.append({
-            'account': a.name, 'balance': list(a.balance())
+            'account': a.name, 'balance': list(a.sumbalance())
         })
 
     return status.HTTP_200_OK, result
@@ -59,29 +59,4 @@ def get_account_balances(request):
 
 
 
-class Balance:
-    def __init__(self, balances):
-        balance1 = balances[0]
-        balance2 = balances[1]
-
-        if balance1['currency'] == 'USD':
-            balanceUSD = balance1['sum']
-            balanceIQD = balance2['sum']
-        else:
-            balanceIQD = balance1['sum']
-            balanceUSD = balance2['sum']
-
-        self.balanceUSD = balanceUSD
-        self.balanceIQD = balanceIQD
-
-    def __add__(self, other):
-        self.balanceIQD += other.balanceIQD
-        self.balanceUSD += other.balanceUSD
-        return [{
-            'currency': 'USD',
-            'sum': self.balanceUSD
-        }, {
-            'currency': 'IQD',
-            'sum': self.balanceIQD
-        }]
 
