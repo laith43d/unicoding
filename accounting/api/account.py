@@ -24,6 +24,9 @@ def get_one(request, account_id: int):
         return account
     except Account.DoesNotExist:
         return 404, {'detail': f'Account with id {account_id} does not exist'}
+    
+
+
 
 
 @account_router.get('/get_account_types/')
@@ -48,3 +51,42 @@ def get_account_balances(request):
             'account':a.name ,'balance':final
         })
     return status.HTTP_200_OK,result
+
+class Balance:
+    def __init__(self, balances):
+        balance1 = balances[0]
+        balance2 = balances[1]
+
+        if balance1['currency'] == 'USD':
+            balanceUSD = balance1['sum']
+            balanceIQD = balance2['sum']
+        else:
+            balanceIQD = balance1['sum']
+            balanceUSD = balance2['sum']
+
+        self.balanceUSD = balanceUSD
+        self.balanceIQD = balanceIQD
+
+    def __add__(self, other):
+        self.balanceIQD += other.balanceIQD
+        self.balanceUSD += other.balanceUSD
+        return [{
+            'currency': 'USD',
+            'sum': self.balanceUSD
+        }, {
+            'currency': 'IQD',
+            'sum': self.balanceIQD
+        }]
+        
+def greater(self, other):
+    print(self.balanceUSD > other.balanceUSD,self.balanceIQD > other.balanceIQD) 
+
+def lesser(self, other):
+    print(self.balanceUSD < other.balanceUSD,self.balanceIQD < other.balanceIQD)
+
+
+def is_zero(self):
+    if self.balanceIQD == 0 and self.balanceUSD == 0:
+        return True
+    else:
+        return False
