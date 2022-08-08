@@ -49,7 +49,7 @@ class CurrencyChoices(models.TextChoices):
 
 
 class Account(models.Model):
-    parent = models.ForeignKey('self', null=True, blank=True, on_delete=models.SET_NULL)
+    parent = models.ForeignKey('self', null=True, blank=True, on_delete=models.SET_NULL,related_name='children_account')
     type = models.CharField(max_length=255, choices=AccountTypeChoices.choices)
     name = models.CharField(max_length=255)
     code = models.CharField(max_length=20, null=True, blank=True)
@@ -99,6 +99,8 @@ class Transaction(models.Model):
         if transaction_sum != 0:
             raise AccountingEquationError
 
+    def __str__(self):
+        return f'{self.type} - {self.description}'
 
 class JournalEntry(models.Model):
     class Meta:
