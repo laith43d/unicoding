@@ -72,4 +72,4 @@ class CurrencyBalance(Schema):
 class GeneralLedgerOut(Schema):
     account: str
     balance: List[CurrencyBalance]
-    # jes: List[JournalEntryOut]
+    #jes: List[JournalEntryOut]

@@ -38,11 +38,13 @@ INSTALLED_APPS = [
 
     'restauth',
     'accounting',
+    
 ]
 
 AUTH_USER_MODEL = 'restauth.EmailAccount'
 
 MIDDLEWARE = [
+    
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',

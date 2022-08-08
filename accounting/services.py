@@ -32,4 +32,3 @@ def account_transfer(data):
         #     t.delete()
         #     return status.HTTP_400_BAD_REQUEST, {'detail': 'transaction is not valid'}
         return t
-

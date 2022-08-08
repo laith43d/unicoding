@@ -9,7 +9,7 @@ from .schemas import AccountIn, AuthOut, SigninIn
 auth_router = Router(tags=['auth'])
 User = get_user_model()
 
-
+ 
 @auth_router.post('signup', response={
     201: AuthOut,
     400: FourOFourOut,

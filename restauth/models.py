@@ -16,6 +16,7 @@ class EmailAccountManager(UserManager):
         user = self.model(
             email=self.normalize_email(email)
         )
+        
         user.set_password(password)
         user.first_name = first_name
         user.last_name = last_name
