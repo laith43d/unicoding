@@ -57,10 +57,10 @@ class Balance:
     #Here Is The Test <:
 list1= [{
             'currency': 'USD',
-            'sum': 200
+            'sum': 0
         }, {
             'currency': 'IQD',
-            'sum': 2000000
+            'sum': 0
         }]
 list2=[{'currency': 'USD',
             'sum': 400
@@ -71,11 +71,11 @@ list2=[{'currency': 'USD',
 Obj1 = Balance(list1)
 Obj2 = Balance(list2)
 
-result = Obj1.__gt__(Obj2)
+result = (Obj1 > Obj2)
 print(result)
-result2 = Obj1.__lt__(Obj2)
+result2 = (Obj1 < Obj2)
 print(result2)
-result3 = Obj1.is_zero()
+result3 = (Obj1 == 0)
 print(result3)
-result4 = Obj2.is_zero()
+result4 = (Obj2 == 0)
 print(result4)
