@@ -1,6 +1,4 @@
 #class balance
-from unittest import result
-
 
 class Balance:
 
@@ -35,41 +33,25 @@ class Balance:
         return result
 
     #Grater than function
-    def __Gthan__ (self, other):
-        IQD = True
-        USD = True
-        if self.balanceIQD > other.balanceIQD:
-            IQD = True
-        else:
-            IQD = False
-        if self.balanceUSD > other.balanceUSD:
-            USD = True
-        else:
-            USD = False
-        return {'IQD': IQD, 'USD': USD}
+    def __gt__(self, other):
+        if (isinstance(other, Balance)):
+            IQD=  self.balanceIQD > other.balanceIQD
+            USD = self.balanceUSD > other.balanceUSD
+            return (IQD,USD)
     
-    #Smaller than function
-    def __Sthan__ (self, other):
-        IQD = True
-        USD = True
-        if self.balanceIQD < other.balanceIQD:
-            IQD = True
-        else:
-            IQD = False
-        if self.balanceUSD < other.balanceUSD:
-            USD = True
-        else:
-            USD = False
-        return {'IQD': IQD, 'USD': USD}
+    #less than function
+    def __lt__(self, other):
+        if (isinstance(other, Balance)):
+            IQD=  self.balanceIQD < other.balanceIQD
+            USD = self.balanceUSD < other.balanceUSD
+            return (IQD,USD)
 
     #is zero?
-    def __iszero__(self):
-        IQD = True
-        USD = True
-        if self.balanceIQD == 0 and self.balanceUSD==0:
-            return True
-        else:
-            return False
+    def iszero(self):
+        if (isinstance(self,Balance)):
+            return self.balanceIQD ==0 and self.balanceUSD==0
+
+    
 
 #test the sol:
 balance1= [{'currency': 'USD', 'sum': 200}, {'currency': 'IQD','sum': 50000 }]
@@ -80,13 +62,8 @@ balance1_object = Balance(balance1)
 balance2_object = Balance(balance2)
 balance3_object = Balance(balance3)
 
+print(balance1_object > balance2_object) #output: (False, True)
+print(balance1_object < balance2_object) #output: (True, False)
+print(balance1_object.iszero())  #output: False
+print(balance3_object.iszero())  #output: True
 
-result = balance1_object.__Gthan__(balance2_object)
-print(result) #output: {'IQD': False, 'USD': True}
-
-result = balance1_object.__Sthan__(balance2_object)
-print(result) #output: {'IQD': True, 'USD': False}
-
-print(balance1_object.__iszero__()) #output: False
-print(balance2_object.__iszero__()) #output: False
-print(balance3_object.__iszero__()) #output: True
