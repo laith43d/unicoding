@@ -1,3 +1,4 @@
+from http import HTTPStatus
 from ninja import Router
 from ninja.security import django_auth
 from django.shortcuts import get_object_or_404
@@ -5,7 +6,7 @@ from accounting.models import Account, AccountTypeChoices
 from accounting.schemas import AccountOut, FourOFourOut, GeneralLedgerOut
 from typing import List
 from django.db.models import Sum, Avg
-from rest_framework import status
+from accounting.services import get_balance
 
 from restauth.authorization import AuthBearer
 
@@ -14,7 +15,7 @@ account_router = Router(tags=['account'])
 
 @account_router.get("/get_all", response=List[AccountOut])
 def get_all(request):
-    return status.HTTP_200_OK, Account.objects.order_by('full_code')
+    return HTTPStatus.OK, Account.objects.order_by('full_code')
 
 
 @account_router.get('/get_one/{account_id}/', response={
@@ -42,42 +43,95 @@ def get_account_balance(request, account_id: int):
 
     journal_entries = account.journal_entries.all()
 
-    return 200, {'account': account.name, 'balance': list(balance), 'jes': list(journal_entries)}
+    return HTTPStatus.OK, {'account': account.name, 'balance': list(balance), 'jes': list(journal_entries)}
 
 
-@account_router.get('/account-balances/', response=List[GeneralLedgerOut])
+#this end-point for task solution(get all balances)
+@account_router.get('/account-balances/') 
 def get_account_balances(request):
     accounts = Account.objects.all()
-    result = []
+    result=[]
     for a in accounts:
-        result.append({
-            'account': a.name, 'balance': list(a.balance())
-        })
+        jes = a.journal_entries.all()
+        name = a.name
+        children_accounts = a.children.all()
+        balance =[]
+        children_balances=[]
+        account_balance = a.balance()
 
-    return status.HTTP_200_OK, result
-
-
-
-
-class Balance:
-    def __init__(self, balances):
-        balance1 = balances[0]
-        balance2 = balances[1]
-
-        if balance1['currency'] == 'USD':
-            balanceUSD = balance1['sum']
-            balanceIQD = balance2['sum']
+        if list(jes) == []:
+            final_balance = 0
+            result.append({'account': name,'balance': final_balance })
         else:
-            balanceIQD = balance1['sum']
-            balanceUSD = balance2['sum']
+            for a in children_accounts:
+                balance.append(list(a.balance()))
+    
+            for a in balance:
+                for i in a:
+                    children_balances.append(i)
+    
 
+            child_balance = Balance(get_balance(children_balances))
+            parent_balance= Balance(account_balance)
+
+            if list(children_accounts) != []:
+                final_balance = child_balance.__add__(parent_balance)
+            else:
+                final_balance = list(account_balance)
+        
+            result.append({'account': name,'balance': final_balance })
+    return HTTPStatus.OK, result
+
+
+
+#this end-point for task solution(get balance for specific account)
+@account_router.get('/account-balance/{account_id}')
+def get_account_balance(request, account_id: int):
+    account = get_object_or_404(Account, id=account_id)
+    children_accounts = account.children.all()
+    balance =[]
+    children_balances=[]
+    
+    for a in children_accounts:
+            balance.append(list(a.balance()))
+    
+    for a in balance:
+        for i in a:
+            children_balances.append(i)
+    
+    child_balance = Balance(get_balance(children_balances))
+    parent_balance= Balance(account.balance())
+
+    if list(children_accounts) != []:
+        print(children_accounts)
+        final_balance = child_balance.__add__(parent_balance)
+    else:
+        final_balance = list(account.balance())
+    
+    return HTTPStatus.OK, {'account': account.name ,'balance': final_balance }
+
+#class balance
+class Balance:
+
+    def __init__(self, balances):
+       
+        balanceIQD = 0
+        balanceUSD = 0
+        for i in balances:
+            if i['currency'] == 'USD':
+                balanceUSD = i['sum']
+            if i['currency'] == 'IQD':
+                balanceIQD = i['sum']
+
+       
         self.balanceUSD = balanceUSD
         self.balanceIQD = balanceIQD
 
     def __add__(self, other):
+        
         self.balanceIQD += other.balanceIQD
         self.balanceUSD += other.balanceUSD
-        return [{
+        result=[{
             'currency': 'USD',
             'sum': self.balanceUSD
         }, {
@@ -85,3 +139,4 @@ class Balance:
             'sum': self.balanceIQD
         }]
 
+        return result
