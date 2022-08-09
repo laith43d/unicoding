@@ -97,6 +97,24 @@ class Balance:
 
         self.balanceUSD = balanceUSD
         self.balanceIQD = balanceIQD
+         def __eq__(self,other):
+           return self.balanceUSD==other.balanceUSD,self.balanceIQD==other.balanceIQD
+
+        def __ne__(self,other):
+           return self.balanceUSD!=other.balanceUSD,self.balanceIQD!=other.balanceIQD
+
+        def __gt__(self, other):
+            return self.balanceUSD > other.balanceUSD, self.balanceIQD > other.balanceIQD
+
+        def __lt__(self, other):
+            return self.balanceUSD < other.balanceUSD, self.balanceIQD < other.balanceIQD
+
+        def __le__(self, other):
+            return self.balanceUSD <= other.balanceUSD, self.balanceIQD <= other.balanceIQD
+
+        def __ge__(self, other):
+            return self.balanceUSD >= other.balanceUSD, self.balanceIQD >= other.balanceIQD
+
 
     def __add__(self, other):
         self.balanceIQD += other.balanceIQD
