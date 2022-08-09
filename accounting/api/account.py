@@ -57,6 +57,30 @@ def get_account_balances(request):
     return status.HTTP_200_OK, result
 
 
+@account_router.get('/parent-child-balances/', response=List[SumChildParent])
+def get_parent_child_balances(request):
+    accounts = Account.objects.all()
+    parentlist = []
+   
+    for account in accounts:
+        if account.account_set.all():
+            sumbalanceUSD = 0
+            sumbalanceIQD = 0
+            for child in account.account_set.all():
+                balance = list(account.balance())
+                balance += list(child.balance())
+                for b in balance:
+                    if b['currency'] == 'USD':
+                        sumbalanceUSD += int(b['sum'])
+                    else:
+                        sumbalanceIQD += int(b['sum'])
+            parentlist.append({'account': account.name, 'balance': list(account.balance()), 'id':account.id, 'sumbalanceUSD':sumbalanceUSD, 'sumbalanceIQD':sumbalanceIQD})
+           
+             
+           
+    return status.HTTP_200_OK, parentlist
+
+
 
 
 class Balance:
@@ -73,6 +97,24 @@ class Balance:
 
         self.balanceUSD = balanceUSD
         self.balanceIQD = balanceIQD
+         def __eq__(self,other):
+           return self.balanceUSD==other.balanceUSD,self.balanceIQD==other.balanceIQD
+
+        def __ne__(self,other):
+           return self.balanceUSD!=other.balanceUSD,self.balanceIQD!=other.balanceIQD
+
+        def __gt__(self, other):
+            return self.balanceUSD > other.balanceUSD, self.balanceIQD > other.balanceIQD
+
+        def __lt__(self, other):
+            return self.balanceUSD < other.balanceUSD, self.balanceIQD < other.balanceIQD
+
+        def __le__(self, other):
+            return self.balanceUSD <= other.balanceUSD, self.balanceIQD <= other.balanceIQD
+
+        def __ge__(self, other):
+            return self.balanceUSD >= other.balanceUSD, self.balanceIQD >= other.balanceIQD
+
 
     def __add__(self, other):
         self.balanceIQD += other.balanceIQD
