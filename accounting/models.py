@@ -71,6 +71,9 @@ class Account(MPTTModel):
 
         ]
         return result
+
+
+
         #return self.journal_entries.values('currency').annotate(sum=Sum('amount')).order_by()
 
     # def save(
