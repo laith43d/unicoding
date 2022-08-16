@@ -32,4 +32,37 @@ def account_transfer(data):
         #     t.delete()
         #     return status.HTTP_400_BAD_REQUEST, {'detail': 'transaction is not valid'}
         return t
+    
+    
+    
+ def __gt__(self, other):
+
+        if self.balanceUSD > other.balanceUSD :
+            StaUSD = True
+        else:
+            StaUSD = False
+        if self.balanceIQD > other.balanceIQD :
+            StaIQD = True
+        else:
+            StaIQD = False
+        return {'USD':StaUSD},{'IQD':StaIQD}
+
+
+    def __lt__(self,other):
+
+        if self.balanceUSD < other.balanceUSD :
+            StaUSD = True
+        else:
+            StaUSD = False
+        if self.balanceIQD < other.balanceIQD :
+            StaIQD = True
+        else:
+            StaIQD = False
+        return {'USD':StaUSD},{'IQD':StaIQD}
+
+    def is_zero(self):
+        if self.balanceIQD == 0 and self.balanceUSD == 0 :
+            return True
+        else:
+            return False
 
