@@ -23,8 +23,7 @@ def get_all(request):
 })
 def get_one(request, account_id: int):
     try:
-        account = Account.objects.get(id=account_id)
-        return account
+        return Account.objects.get(id=account_id)
     except Account.DoesNotExist:
         return 404, {'detail': f'Account with id {account_id} does not exist'}
 
@@ -48,12 +47,9 @@ def get_account_balance(request, account_id: int):
 @account_router.get('/account-balances/', response=List[GeneralLedgerOut])
 def get_account_balances(request):
     accounts = Account.objects.all()
-    result = []
-    for a in accounts:
-        result.append({
-            'account': a.name, 'balance': list(a.balance())
-        })
-
+    result = [
+        {'account': a.name, 'balance': list(a.balance())} for a in accounts
+    ]
     return status.HTTP_200_OK, result
 
 
