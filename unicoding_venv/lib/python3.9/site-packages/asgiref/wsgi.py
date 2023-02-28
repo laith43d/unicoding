@@ -56,10 +56,12 @@ class WsgiToAsgiInstance:
         """
         environ = {
             "REQUEST_METHOD": scope["method"],
-            "SCRIPT_NAME": scope.get("root_path", "").encode("utf8").decode("latin1"),
+            "SCRIPT_NAME": scope.get("root_path", "")
+            .encode("utf8")
+            .decode("latin1"),
             "PATH_INFO": scope["path"].encode("utf8").decode("latin1"),
             "QUERY_STRING": scope["query_string"].decode("ascii"),
-            "SERVER_PROTOCOL": "HTTP/%s" % scope["http_version"],
+            "SERVER_PROTOCOL": f'HTTP/{scope["http_version"]}',
             "wsgi.version": (1, 0),
             "wsgi.url_scheme": scope.get("scheme", "http"),
             "wsgi.input": body,
@@ -87,11 +89,11 @@ class WsgiToAsgiInstance:
             elif name == "content-type":
                 corrected_name = "CONTENT_TYPE"
             else:
-                corrected_name = "HTTP_%s" % name.upper().replace("-", "_")
+                corrected_name = f'HTTP_{name.upper().replace("-", "_")}'
             # HTTPbis say only ASCII chars are allowed in headers, but we latin1 just in case
             value = value.decode("latin1")
             if corrected_name in environ:
-                value = environ[corrected_name] + "," + value
+                value = f"{environ[corrected_name]},{value}"
             environ[corrected_name] = value
         return environ
 
