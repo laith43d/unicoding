@@ -23,8 +23,7 @@ def get_all(request):
 })
 def get_one(request, account_id: int):
     try:
-        account = Account.objects.get(id=account_id)
-        return account
+        return Account.objects.get(id=account_id)
     except Account.DoesNotExist:
         return status.HTTP_404_NOT_FOUND, {'detail': f'Account with id {account_id} does not exist'}
 
@@ -38,11 +37,11 @@ def get_account_types(request):
 def get_account_balance(request, account_id: int):
     global balance, balanceUSD
     account = get_object_or_404(Account, id=account_id)
-    if account.parent != None:
-        balance = account.balance()
-    else:
+    if account.parent is None:
         balance=account.parent_balances
 
+    else:
+        balance = account.balance()
     journal_entries = account.journal_entries.all()
     return 200, {'account': account.name, 'balance': list(balance), 'jes': list(journal_entries)}
 
@@ -50,12 +49,9 @@ def get_account_balance(request, account_id: int):
 @account_router.get('/account-balances/', response=List[GeneralLedgerOut])
 def get_account_balances(request):
     accounts = Account.objects.all()
-    result = []
-    for a in accounts:
-        result.append({
-            'account': a.name, 'balance': list(a.balance())
-        })
-
+    result = [
+        {'account': a.name, 'balance': list(a.balance())} for a in accounts
+    ]
     return status.HTTP_200_OK, result
 
 

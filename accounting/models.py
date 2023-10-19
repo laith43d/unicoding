@@ -81,8 +81,8 @@ class Balance:
         return bIQD, bUSD
 
     def is_zero(self):
-        bIQD = True if self.balanceIQD == 0 else False
-        bUSD = True if self.balanceUSD == 0 else False
+        bIQD = self.balanceIQD == 0
+        bUSD = self.balanceUSD == 0
         return bIQD, bUSD
 
 
