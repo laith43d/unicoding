@@ -1,5 +1,4 @@
 """config URL Configuration
-
 The `urlpatterns` list routes URLs to views. For more information please see:
     https://docs.djangoproject.com/en/4.0/topics/http/urls/
 Examples:
@@ -23,7 +22,7 @@ from restauth.api import auth_router
 api = NinjaAPI(
     title='Accounting for All',
     version='0.2',
-    description='This is a model preview of a double entry accouting system.',
+    description='This is a model preview of a double entry accounting system.',
     csrf=True,
 )
 api.add_router('account/', account_router)
